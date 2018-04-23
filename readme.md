@@ -147,7 +147,7 @@ mapper.xml以statement为单位管理sql语句
 	}
 ```
 
-### [入门程序]()
+### [入门程序](https://github.com/wangwren/Mybatis/tree/master/mybatis_day01)
 - 增删改查
 - 主键返回(重要)
 
