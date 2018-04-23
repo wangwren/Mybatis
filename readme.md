@@ -146,6 +146,11 @@ mapper.xml以statement为单位管理sql语句
 		}
 	}
 ```
+
+### [入门程序]()
+- 增删改查
+- 主键返回(重要)
+
 ### 开发过程
 1. 编写SqlMapConfing.xml
 2. 编写mapper.xml
@@ -174,7 +179,7 @@ mapper.xml以statement为单位管理sql语句
 ### \#{}
 - 表示一个占位符，向占位符输入参数，mybatis自动进行java类型和jdbc类型的转换。程序员不需要考虑参数的类型，比如：传入字符串，mybatis最终拼接好的sql就是参数两边加单引号。
 - \#{}接收pojo数据，可以**使用OGNL解析出pojo的属性值**
-### \#${}
+### ${}
 - 表示sql的拼接，通过${}接收参数，将参数的内容不加任何修饰拼接在sql中。
 - ${}也可以接收pojo数据，可以使用OGNL解析出pojo的属性值
 - 缺点：不能防止sql注入。
