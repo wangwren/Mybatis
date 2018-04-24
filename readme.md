@@ -169,6 +169,12 @@ mapper.xml以statement为单位管理sql语句
     - 解决：Mybatis自动将java对象映射至sql语句，通过statement中的parameterType定义输入参数的类型。
 4. 对结果集解析麻烦，sql变化导致解析代码变化，且解析前需要遍历，如果能将数据库记录封装成pojo对象解析比较方便。
     - 解决：Mybatis自动将sql执行结果映射至java对象，通过statement中的resultType定义输出结果的类型。
+### mybatis与hibernate重要区别
+- mybatis：入门简单，程序容易上手开发，节省开发成本 。mybatis需要程序员自己编写sql语句，是一个不完全 的ORM框架，对sql修改和优化非常容易实现 。
+- mybatis适合开发需求变更频繁的系统，比如：互联网项目。
+- hibernate：入门门槛高，如果用hibernate写出高性能的程序不容易实现。hibernate不用写sql语句，是一个 ORM框架。
+- hibernate适合需求固定，对象数据模型稳定，中小型项目，比如：企业OA系统。
+- 总之，企业在技术选型时根据项目实际情况，以降低成本和提高系统 可维护性为出发点进行技术选型。
 ## 小总结
 ### SqlMapConfig.xml
 - 是mybatis全局配置文件，只有一个，名称不固定的，主要mapper.xml，mapper.xml中配置 sql语句
@@ -190,6 +196,93 @@ org.apache.ibatis.exceptions.TooManyResultsException: Expected one result (or nu
 ```
 ### selectList
 - 用于查询多条记录，可以用于查询单条记录的。
+## mybatis开发的方法
+### SqlSession作用范围
+- SqlSessionFactoryBuilder
+    - SqlSessionFactoryBuilder是以工具类方式来使用，需要创建sqlSessionFactory就new一个SqlSessionFactoryBuilder。
+- SqlSessionFactory
+    - 正常开发时，以单例方式管理sqlSessionFactory，整个系统运行过程中sqlSessionFactory只有一个实例，将来和spring整合后由spring以单例方式管理sqlSessionFactory。
+- SqlSession
+    - sqlSession是一个面向用户（程序员）的接口，程序员调用sqlSession的接口方法进行操作数据库。
+    - 由于sqlSession是**线程不安全**，所以sqlSession最佳应用范围在方法体内，在方法体内定义局部变量使用sqlSession。
+### 原始dao开发方式
+程序员需要写dao接口和dao的实现类
+### mapper代理的方式
+程序员只需要写dao接口，**dao接口实现对象由mybatis自动生成代理对象**。本身dao在三层架构中就是一个通用的接口。
+- 原始dao开发方式问题
+    - dao的实现类中存在重复代码，整个mybatis操作的过程代码模板重复（先创建sqlsession、调用sqlsession的方法、关闭sqlsession）
+    - dao的实现 类中存在硬编码，调用sqlsession方法时将statement的id硬编码。
+#### mapper开发规范
+要想让mybatis自动创建dao接口实现类的代理对象，必须遵循一些规则:  
+- mapper.xml中namespace指定为mapper接口的全限定名(全类名)
+```xml
+<!--UserMapper.xml-->
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 
+	namespace命名空间，为了对sql语句进行隔离，方便管理 ，mapper开发dao方式，使用namespace有特殊作用
+	mapper代理开发时将namespace指定为mapper接口的全限定名(即接口的全类名)
+ -->
+<mapper namespace="vvr.mybatis.mapper.UserMapper">
+```
+此步骤目的:通过mapper.xml(UserMapper.xml)和mapper.java(UserMapper.java)进行关联  
+- mapper.xml中statement的id就是mapper.java中方法名
+- mapper.xml中statement的parameterType和mapper.java中方法输入参数类型一致
+- mapper.xml中statement的resultType和mapper.java返回值类型一致
+#### mapper.xml
+- mapper.xml映射文件的命名方式建议:表名+Mapper.xml  
+- namespace指定为mapper接口的全限定名  
+```xml
+<!--UserMapper.xml-->
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="vvr.mybatis.mapper.UserMapper">
+ 	<!-- 根据id查询用户信息 -->
+	<select id="findById" parameterType="int" resultType="vvr.mybatis.pojo.User">
+		select * from user where id = #{id}
+	</select>
+</mapper>
+```
+#### mapper接口
+- mybatis提出了mapper接口，相当于dao接口
+- mybatis接口的命名方式建议:表名+Mapper
+```java
+//UserMapper.java
+public interface UserMapper {
+
+	/**
+	 * 查询指定用户
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
+	public User findById(int id) throws Exception;
+```
+#### 将mapper.xml在SqlMapConfig.xml中加载
+```xml
+<mappers>
+ 	<mapper resource="sqlmap/User.xml"/>
+ 	<mapper resource="mapper/UserMapper.xml"/>
+</mappers>
+```
+#### mapper接口返回单个对象和集合对象
+不管查询记录是单条还是多条，在 statement中resultType定义一致，都是单条记录映射的pojo类型。  
+mapper接口方法返回值，如果是**返回的单个对象**，返回值类型是**pojo类型**，生成的代理对象**内部通过selectOne获取记录**，如果返回值类型**是集合对象**，生成的代理对象**内部通过selectList获取记录**。
+#### 返回值问题
+如果方法调用的statement，返回是多条记录，而mapper.java方法的返回值为pojo类型，此时代理对象通过selectOne调用，由于返回多条记录，所以报错：
+```java
+org.apache.ibatis.exceptions.TooManyResultsException: Expected one result (or null) to be returned by selectOne(), but found: 4
+```
+#### 输入参数问题
+- 使用mapper代理的方式开发，mapper接口方法输入 参数只有一个，可扩展性是否很差？？
+    - 可扩展性没有问题，因为dao层就是通用的，可以通过扩展pojo（定义pojo包装类型）将不同的参数（可以是pojo也可以简单类型）传入进去。
+
+
 
 
 
