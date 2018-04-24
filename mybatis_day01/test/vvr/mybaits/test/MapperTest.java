@@ -1,0 +1,110 @@
+package vvr.mybaits.test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.ibatis.io.Resources;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.junit.Before;
+import org.junit.Test;
+
+import vvr.mybatis.mapper.UserMapper;
+import vvr.mybatis.pojo.User;
+
+public class MapperTest {
+
+	//会话工厂
+	private SqlSessionFactory sqlSessionFactory;
+	
+	@Before
+	public void init() throws Exception {
+		String resource = "SqlMapConfig.xml";
+		InputStream inputStream = Resources.getResourceAsStream(resource);
+		sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+	}
+	
+	/**
+	 * 通过ID查询指定用户
+	 * @throws Exception 
+	 */
+	@Test
+	public void findById() throws Exception {
+		
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		
+		//此处重点，由于UserMapper是接口，也没有实现类，所以不能用new的方式，依靠mybatis生成代理对象来实现
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		User user = userMapper.findById(1);
+		System.out.println(user);
+		sqlSession.close();
+	}
+	
+	/**
+	 * 根据用户名模糊查询
+	 * @throws Exception
+	 */
+	@Test
+	public void findByName() throws Exception{
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		List<User> list = userMapper.findByName("小明");
+		for(User user : list) {
+			System.out.println(user);
+		}
+		sqlSession.close();
+	}
+	
+	/**
+	 * 添加用户
+	 * @throws Exception
+	 */
+	@Test
+	public void insertUser() throws Exception{
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		User user = new User();
+		user.setUsername("李屹勃");
+		user.setSex("1");
+		user.setBirthday(new Date());
+		user.setAddress("鞍山");
+		userMapper.insertUser(user);
+		sqlSession.commit();
+		sqlSession.close();
+	}
+	
+	/**
+	 * 修改指定用户
+	 * @throws Exception
+	 */
+	@Test
+	public void updateUser() throws Exception{
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		User user = new User();
+		user.setId(30);
+		user.setUsername("勃勃勃");
+		user.setSex("1");
+		user.setBirthday(new Date());
+		user.setAddress("鞍山");
+		userMapper.updateUser(user);
+		sqlSession.commit();
+		sqlSession.close();
+	}
+	
+	/**
+	 * 删除指定用户
+	 * @throws Exception
+	 */
+	@Test
+	public void deleteUser() throws Exception{
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		userMapper.deleteUser(30);
+		sqlSession.commit();
+		sqlSession.close();
+	}
+}
