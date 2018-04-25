@@ -19,8 +19,9 @@ mapper.xml以statement为单位管理sql语句
 		#{}：表示 一个占位符，如果#{}中传入简单类型的参数，#{}中的名称随意
 		parameterType：输入 参数的类型，通过#{}接收parameterType输入 的参数
 		resultType：输出结果 类型，不管返回是多条还是单条，指定单条记录映射的pojo类型
+		这里的resultType类型在SqlMapConfig.xml中指定了别名
 	 -->
-	<select id="findById" parameterType="int" resultType="vvr.mybatis.pojo.User">
+	<select id="findById" parameterType="int" resultType="user">
 		select * from user where id = #{id}
 	</select>
 	

@@ -4,6 +4,27 @@ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
 
+	<!-- 属性定义 -->
+	<properties resource="db.properties"></properties>
+	
+	<!-- 别名定义 -->
+	<typeAliases>
+		<!-- 
+			指定单个别名 
+			type:别名类型映射
+			alias：别名
+			在UserMapper.xml中对于参数类型的指定就可以使用该别名	
+		-->
+		<!-- <typeAlias type="vvr.mybatis.pojo.User" alias="user"/> -->
+		
+		
+		<!-- 批量指定别名，
+			指定包路径，自动扫描包下边的pojo，定义别名，别名默认为类名（首字母大写或小写）
+		 -->
+		 <package name="vvr.mybatis.pojo"/>
+		
+	</typeAliases>
+	
 	<!-- 和spring整合后 environments配置将废除-->
 	<environments default="development">
 		<environment id="development">
@@ -11,10 +32,10 @@ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
 			<transactionManager type="JDBC" />
 		<!-- 数据库连接池-->
 			<dataSource type="POOLED">
-				<property name="driver" value="com.mysql.jdbc.Driver"/>
-				<property name="url" value="jdbc:mysql://localhost:3306/mybatis"/>
-				<property name="username" value="root"/>
-				<property name="password" value="root"/>
+				<property name="driver" value="${jdbc.driver}"/>
+				<property name="url" value="${jdbc.url}"/>
+				<property name="username" value="${jdbc.username}"/>
+				<property name="password" value="${jdbc.password}"/>
 			</dataSource>
 		</environment>
 	</environments>
