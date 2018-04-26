@@ -281,8 +281,127 @@ org.apache.ibatis.exceptions.TooManyResultsException: Expected one result (or nu
 #### 输入参数问题
 - 使用mapper代理的方式开发，mapper接口方法输入 参数只有一个，可扩展性是否很差？？
     - 可扩展性没有问题，因为dao层就是通用的，可以通过扩展pojo（定义pojo包装类型）将不同的参数（可以是pojo也可以简单类型）传入进去。
+### SqlMapConfig.xml配置
+- SqlMapConfig.xml中配置的内容和顺序如下
+    1. properties(属性)
+    2. settings(全局配置参数)
+    3. typeAliases(类型别名)
+    4. typeHandlers(类型处理器)
+    5. objectFactory(对象工厂)
+    6. plugins(插件)
+    7. environments(环境集合属性对象)
+        - environment(环境子属性对象)
+            - transactionManager(事务管理)
+            - dataSource(数据源)
+    8. mappers(映射器)
+#### properties属性定义
+可以把一些通用的属性值配置在属性文件中，加载到mybatis运行环境中内。比如:创建db.properties配置数据库连接参数。
+```xml
+<!-- 属性定义 -->
+<properties resource="db.properties"></properties>
+<!-- 和spring整合后 environments配置将废除-->
+<environments default="development">
+	<environment id="development">
+	<!-- 使用jdbc事务管理-->
+		<transactionManager type="JDBC" />
+	<!-- 数据库连接池-->
+		<dataSource type="POOLED">
+    		<property name="driver" value="${jdbc.driver}"/>
+			<property name="url" value="${jdbc.url}"/>
+			<property name="username" value="${jdbc.username}"/>
+    		<property name="password" value="${jdbc.password}"/>
+		</dataSource>
+	</environment>
+</environments>
+```
+注意:mybatis将按照下面的顺序来加载属性:
+- 在properties元素体内定义的属性首先被读取
+- 然后会读取properties元素中resource或url加载的属性，它会覆盖已读取的同名属性。
+- 最后读取parameterType传递的属性，它会覆盖已读取的同名属性。  
+建议使用properties，不要在properties中定义属性，只引用定义的properties文件中属性，定义的key要有一些特殊的规则。
+#### settings全局参数配置
+mybatis运行时可以调整一些全局参数(相当于软件的运行参数)，参考:mybatis-settings.xlsx,根据使用需求进行参数配置。  
+注意:小心配置，配置参数会影响mybatis的执行。
+#### typeAliases(常用)
+可以将parameterType、resultType中指定的类型通过别名引用。  
+mybatis提供了很多别名:
 
-
+别名|映射的类型|
+|--------------|--------------|
+|_byte|byte|
+|_long|long|
+|_short|short|
+|_int|int|
+|_integer|int|
+|_double|double|
+|_float|float|
+|_boolean|boolean|
+|string|String|
+|byte|Byte|
+|long|Long|
+|short|Short|
+|int|Integer|
+|integer|Integer|
+|double|Double|
+|float|Float|
+|boolean|Boolean|
+|date|Date|
+|decimal|BigDecimal|
+|bigdecimal|BigDecimal|
+#### 自定义别名和使用别名
+```xml
+<!--SqlMapConfig.xml-->
+<!-- 别名定义 -->
+	<typeAliases>
+		<!-- 
+			指定单个别名 
+			type:别名类型映射
+			alias：别名
+			在UserMapper.xml中对于参数类型的指定就可以使用该别名	
+		-->
+		<!-- <typeAlias type="vvr.mybatis.pojo.User" alias="user"/> -->
+		
+		
+		<!-- 批量指定别名，
+			指定包路径，自动扫描包下边的pojo，定义别名，别名默认为类名（首字母大写或小写）
+		 -->
+		 <package name="vvr.mybatis.pojo"/>
+		
+	</typeAliases>
+```
+使用别名:
+```xml
+<!--UserMapper.xml-->
+<select id="findById" parameterType="int" resultType="user">
+	select * from user where id = #{id}
+</select>
+```
+#### typeHandlers
+类型处理器将java类型和jdbc类型进行映射。  
+mybatis默认提供很多类型处理器，一般情况下够用了。
+#### mappers
+```xml
+<!--SqlMapConfig.xml-->
+<mappers>
+	 	<!-- 通过resource引用mapper映射文件 -->
+	 	<mapper resource="sqlmap/User.xml"/>
+	 	<!-- <mapper resource="mapper/UserMapper.xml"/> -->
+	 	
+	 	
+	 	<!-- 通过class引用mapper接口
+	 		 class:配置mapper接口的全路径类名
+	 		 要求：需要mapper.xml和mapper.java同名并且在同一个目录中
+	 	 -->
+	 	<!-- <mapper class="vvr.mybatis.mapper.UserMapper"/> -->
+	 	
+	 	
+	 	<!-- 批量mapper配置 
+	 		通过package自动扫描包下边的mapper接口
+	 		 要求：需要mapper.xml和mapper.java同名并且在同一个目录中
+	 	-->
+	 	<package name="vvr.mybatis.mapper"/>
+</mappers>
+```
 
 
 
