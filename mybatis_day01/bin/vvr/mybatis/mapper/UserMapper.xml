@@ -34,6 +34,14 @@ mapper.xml以statement为单位管理sql语句
 		select * from user where username like '%${value}%'
 	</select>
 	
+	<!-- 
+		自定义查询条件来查询用户信息，
+		通过pojo的扩展对象来实现
+	 -->
+	 <select id="findUserList" parameterType="userQueryVo" resultType="user">
+	 	select * from user where username like '%${userCustomer.username}%'
+	 </select>
+	
 	
 	<!-- 用户添加 -->
 	<!-- 

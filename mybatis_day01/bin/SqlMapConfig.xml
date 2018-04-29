@@ -56,7 +56,10 @@ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
 	 	<!-- <mapper class="vvr.mybatis.mapper.UserMapper"/> -->
 	 	
 	 	
-	 	<!-- 批量mapper配置 -->
+	 	<!-- 批量mapper配置 
+	 		通过package自动扫描包下边的mapper接口
+	 		 要求：需要mapper.xml和mapper.java同名并且在同一个目录中
+	 	-->
 	 	<package name="vvr.mybatis.mapper"/>
 	 </mappers>
 	

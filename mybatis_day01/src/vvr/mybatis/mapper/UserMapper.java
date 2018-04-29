@@ -3,6 +3,7 @@ package vvr.mybatis.mapper;
 import java.util.List;
 
 import vvr.mybatis.pojo.User;
+import vvr.mybatis.pojo.UserQueryVo;
 
 public interface UserMapper {
 
@@ -42,4 +43,13 @@ public interface UserMapper {
 	 * @throws Exception
 	 */
 	public void updateUser(User user) throws Exception;
+	
+	/**
+	 * 自定义查询条件查询用户信息
+	 * 通过user用户的包装类型
+	 * @param userQueryVo
+	 * @return
+	 * @throws Exception
+	 */
+	public List<User> findUserList(UserQueryVo userQueryVo) throws Exception;
 }

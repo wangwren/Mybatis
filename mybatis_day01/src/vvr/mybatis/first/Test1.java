@@ -12,7 +12,10 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
+import vvr.mybatis.mapper.UserMapper;
 import vvr.mybatis.pojo.User;
+import vvr.mybatis.pojo.UserCustomer;
+import vvr.mybatis.pojo.UserQueryVo;
 
 public class Test1 {
 	
@@ -138,4 +141,5 @@ public class Test1 {
 			sqlSession.close();
 		}
 	}
+	
 }

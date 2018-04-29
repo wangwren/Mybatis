@@ -14,6 +14,8 @@ import org.junit.Test;
 
 import vvr.mybatis.mapper.UserMapper;
 import vvr.mybatis.pojo.User;
+import vvr.mybatis.pojo.UserCustomer;
+import vvr.mybatis.pojo.UserQueryVo;
 
 public class MapperTest {
 
@@ -105,6 +107,25 @@ public class MapperTest {
 		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
 		userMapper.deleteUser(30);
 		sqlSession.commit();
+		sqlSession.close();
+	}
+	
+	/**
+	 * 自定义查询条件查询用户信息
+	 * @throws Exception 
+	 */
+	@Test
+	public void findUserList() throws Exception {
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		UserQueryVo userQueryVo = new UserQueryVo();
+		UserCustomer userCustomer = new UserCustomer();
+		userCustomer.setUsername("小明");
+		userQueryVo.setUserCustomer(userCustomer);
+		List<User> list = userMapper.findUserList(userQueryVo);
+		for(User user : list) {
+			System.out.println(user);
+		}
 		sqlSession.close();
 	}
 }
