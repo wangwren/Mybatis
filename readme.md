@@ -69,7 +69,7 @@ mapper.xml以statement为单位管理sql语句
 	<!-- 
 		id：唯一标识 一个statement
 		#{}：表示 一个占位符，如果#{}中传入简单类型的参数，#{}中的名称随意
-		parameterType：输入 参数的类型，通过#{}接收parameterType输入 的参数
+		parameterType：输入参数的类型，通过#{}接收parameterType输入 的参数
 		resultType：输出结果 类型，不管返回是多条还是单条，指定单条记录映射的pojo类型
 	 -->
 	<select id="findById" parameterType="int" resultType="vvr.mybatis.pojo.User">
@@ -211,7 +211,7 @@ org.apache.ibatis.exceptions.TooManyResultsException: Expected one result (or nu
 程序员只需要写dao接口，**dao接口实现对象由mybatis自动生成代理对象**。本身dao在三层架构中就是一个通用的接口。
 - 原始dao开发方式问题
     - dao的实现类中存在重复代码，整个mybatis操作的过程代码模板重复（先创建sqlsession、调用sqlsession的方法、关闭sqlsession）
-    - dao的实现 类中存在硬编码，调用sqlsession方法时将statement的id硬编码。
+    - dao的实现类中存在硬编码，调用sqlsession方法时将statement的id硬编码。
 #### mapper开发规范
 要想让mybatis自动创建dao接口实现类的代理对象，必须遵循一些规则:  
 - mapper.xml中namespace指定为mapper接口的全限定名(全类名)
