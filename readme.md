@@ -320,7 +320,7 @@ org.apache.ibatis.exceptions.TooManyResultsException: Expected one result (or nu
 - 最后读取parameterType传递的属性，它会覆盖已读取的同名属性。  
 建议使用properties，不要在properties中定义属性，只引用定义的properties文件中属性，定义的key要有一些特殊的规则。
 #### settings全局参数配置
-mybatis运行时可以调整一些全局参数(相当于软件的运行参数)，参考:mybatis-settings.xlsx,根据使用需求进行参数配置。  
+mybatis运行时可以调整一些全局参数(相当于软件的运行参数)，参考:[mybatis-settings.xlsx](https://github.com/wangwren/Mybatis/blob/master/mybatis-settings.xlsx),根据使用需求进行参数配置。  
 注意:小心配置，配置参数会影响mybatis的执行。
 #### typeAliases(常用)
 可以将parameterType、resultType中指定的类型通过别名引用。  
