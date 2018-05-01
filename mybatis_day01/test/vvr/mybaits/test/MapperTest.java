@@ -128,4 +128,25 @@ public class MapperTest {
 		}
 		sqlSession.close();
 	}
+	
+	/**
+	 * 返回简单类型
+	 * 自定义查询条件，查询满足条件的个数
+	 * @return
+	 * @throws Exception
+	 */
+	@Test
+	public void findUserCount() throws Exception {
+		
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		
+		UserQueryVo userQueryVo = new UserQueryVo();
+		UserCustomer userCustomer = new UserCustomer();
+		userCustomer.setUsername("小明");
+		userQueryVo.setUserCustomer(userCustomer);
+		
+		int count = userMapper.findUserCount(userQueryVo);
+		System.out.println(count);
+	}
 }

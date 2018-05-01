@@ -52,4 +52,12 @@ public interface UserMapper {
 	 * @throws Exception
 	 */
 	public List<User> findUserList(UserQueryVo userQueryVo) throws Exception;
+	
+	/**
+	 * 自定义查询条件，返回满足查询条件的个数
+	 * @param userQueryVo
+	 * @return
+	 * @throws Exception
+	 */
+	public int findUserCount(UserQueryVo userQueryVo) throws Exception;
 }

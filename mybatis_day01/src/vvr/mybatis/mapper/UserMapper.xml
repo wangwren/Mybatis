@@ -41,6 +41,14 @@ mapper.xml以statement为单位管理sql语句
 	 <select id="findUserList" parameterType="userQueryVo" resultType="user">
 	 	select * from user where username like '%${userCustomer.username}%'
 	 </select>
+	 
+	 <!-- 
+	 	返回简单类型
+	 	自定义查询条件，返回查询记录个数
+	  -->
+	  <select id="findUserCount" parameterType="userQueryVo" resultType="int">
+	  	select count(*) from user where username like '%${userCustomer.username}%'
+	  </select>
 	
 	
 	<!-- 用户添加 -->
