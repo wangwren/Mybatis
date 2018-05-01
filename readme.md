@@ -320,7 +320,7 @@ org.apache.ibatis.exceptions.TooManyResultsException: Expected one result (or nu
 - 最后读取parameterType传递的属性，它会覆盖已读取的同名属性。  
 建议使用properties，不要在properties中定义属性，只引用定义的properties文件中属性，定义的key要有一些特殊的规则。
 #### settings全局参数配置
-mybatis运行时可以调整一些全局参数(相当于软件的运行参数)，参考:[mybatis-settings.xlsx](https://github.com/wangwren/Mybatis/blob/master/mybatis-settings.xlsx),根据使用需求进行参数配置。  
+mybatis运行时可以调整一些全局参数(相当于软件的运行参数)，参考:[mybatis-settings.xlsx](https://github.com/wangwren/Mybatis/blob/master/mybatis-settings.xlsx),根据使用需求进行参数配置。  
 注意:小心配置，配置参数会影响mybatis的执行。
 #### typeAliases(常用)
 可以将parameterType、resultType中指定的类型通过别名引用。  
@@ -402,6 +402,64 @@ mybatis默认提供很多类型处理器，一般情况下够用了。
 	 	<package name="vvr.mybatis.mapper"/>
 </mappers>
 ```
+### 输入和输出映射
+通过parameterType完成输入映射，通过resultType和resultMap完成输出映射。  
+#### parameteType传递pojo包装对象
+可以定义pojo包装类型扩展mapper接口输入参数的内容。  
+需求:自定义查询条件查询用户信息，需要向statement输入查询条件，查询条件可以有user信息、商品信息....  
+- 包装类型
+```java
+public class UserQueryVo {
+	//用户信息
+	private User user;
+	//自定义user的扩展对象
+	private UserCustomer userCustomer;
+	
+	//提供getter和setter方法
+}
+```
+- mapper.xml
+```xml
+<!-- 
+	自定义查询条件来查询用户信息，
+	通过pojo的扩展对象来实现
+-->
+<select id="findUserList" parameterType="userQueryVo" resultType="user">
+ 	select * from user where username like '%${userCustomer.username}%'
+</select>
+```
+- mapper.java
+```java
+public List<User> findUserList(UserQueryVo userQueryVo) throws Exception;
+```
+- 测试
+```java
+public void findUserList() throws Exception {
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		UserQueryVo userQueryVo = new UserQueryVo();
+		UserCustomer userCustomer = new UserCustomer();
+		userCustomer.setUsername("小明");
+		userQueryVo.setUserCustomer(userCustomer);
+		List<User> list = userMapper.findUserList(userQueryVo);
+		for(User user : list) {
+			System.out.println(user);
+		}
+		sqlSession.close();
+	}
+```
+**注意:如果和spring整合后，不是通过调用getter方法来获取属性值，通过反射强读取pojo的属性值**
+#### resultType
+指定输出结果的类型(pojo、简单类型、hashMap)，将sql查询结果映射为java对象。  
+- 返回简单数据类型，代码中有，需要注意:如果查询记录结果集为**一条记录且一列再使用返回简单数据类型**。
+#### resultMap(入门)
+##### resultType和resultMap区别
+- resultType:指定输出结果的类型(pojo、简单类型、hashMap)，将SQL查询结果映射为java对象。
+    - 使用resultType注意：**sql查询的列名(如果另起别名)要和resultType指定pojo的属性名相同，指定相同属性方可映射成功，如果sql查询的列名和resultType指定pojo的属性名全部不相同，list中无法创建pojo对象的**(list即返回的结果集无数据)。
+- resultMap:将sql查询结果映射为java对象
+    - 如果sql查询列名和最终要映射的pojo的属性名不一致，使用resultMap将列名和pojo的属性名做一个对应关系 （列名和属性名映射配置）
+
+
 
 
 
