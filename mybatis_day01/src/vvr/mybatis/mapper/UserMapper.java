@@ -60,4 +60,21 @@ public interface UserMapper {
 	 * @throws Exception
 	 */
 	public int findUserCount(UserQueryVo userQueryVo) throws Exception;
+	
+	/**
+	 * 使用resultMap
+	 * 此处方法的返回值为定义resultMap时指定的type类型，这里模糊查询，查询多个用户
+	 * @param userQueryVo
+	 * @return
+	 * @throws Exception
+	 */
+	public List<User> findUserListResultMap(UserQueryVo userQueryVo) throws Exception;
+	
+	/**
+	 * 动态sql
+	 * @param userQueryVo
+	 * @return
+	 * @throws Exception
+	 */
+	public List<User> findUserListBySQL(UserQueryVo userQueryVo) throws Exception;
 }

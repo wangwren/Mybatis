@@ -2,6 +2,7 @@ package vvr.mybaits.test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -148,5 +149,54 @@ public class MapperTest {
 		
 		int count = userMapper.findUserCount(userQueryVo);
 		System.out.println(count);
+	}
+	
+	/**
+	 * 使用resultMap
+	 * @throws Exception 
+	 */
+	@Test
+	public void findUserListResultMap() throws Exception {
+		
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		
+		UserQueryVo userQueryVo = new UserQueryVo();
+		User user = new User();
+		user.setUsername("小明");
+		userQueryVo.setUser(user);
+		
+		List<User> list = userMapper.findUserListResultMap(userQueryVo);
+		
+		for(User u : list) {
+			System.out.println(u);
+		}
+	}
+	
+	/**
+	 * 动态sql
+	 * @throws Exception
+	 */
+	@Test
+	public void findUserListBySQL() throws Exception {
+		
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		
+		UserQueryVo userQueryVo = new UserQueryVo();
+		/*User user = new User();
+		user.setUsername("小明");
+		user.setSex("1");
+		userQueryVo.setUser(user);*/
+		List<Integer> ids = new ArrayList<Integer>();
+		ids.add(24);
+		ids.add(25);
+		ids.add(26);
+		userQueryVo.setIds(ids);
+		
+		List<User> list = userMapper.findUserListBySQL(userQueryVo);
+		for(User u : list) {
+			System.out.println(u);
+		}
 	}
 }
