@@ -458,6 +458,138 @@ public void findUserList() throws Exception {
     - 使用resultType注意：**sql查询的列名(如果另起别名)要和resultType指定pojo的属性名相同，指定相同属性方可映射成功，如果sql查询的列名和resultType指定pojo的属性名全部不相同，list中无法创建pojo对象的**(list即返回的结果集无数据)。
 - resultMap:将sql查询结果映射为java对象
     - 如果sql查询列名和最终要映射的pojo的属性名不一致，使用resultMap将列名和pojo的属性名做一个对应关系 （列名和属性名映射配置）
+##### resultMap配置
+```java
+<!-- 定义resultMap,列名和属性名映射配置
+	id：mapper.xml中唯一标识
+	type：最终要映射的pojo类
+ -->
+<resultMap type="user" id="userListResultMap">
+	<!-- id:要映射结果集的标识，称为主键
+		column：结果集的列名
+		property：pojo类（type属性中）中对应的属性
+	 -->
+	<id column="id_" property="id"/>
+		
+	<!-- result是普通列的映射配置 -->
+	<result column="username_" property="username"/>
+	<result column="birthday_" property="birthday"/>
+</resultMap>
+```
+##### 使用resultMap
+- UserMapper.xml
+```xml
+<!-- 使用resultMap
+		   如果引用resultMap的位置和定义resultMap的位置在同一个mapper.xml中，可以直接使用定义resultMap的id
+		 如果引用与定义不在同一个mapper.xml中，那么需要在引用处的resultMap加上namespace
+	   -->
+	  <select id="findUserListResultMap" parameterType="userQueryVo" resultMap="userListResultMap">
+	  	select id id_,username username_,birthday birthday_ from user where username like '%${user.username}%'
+	  </select>
+```
+- UserMapper.java
+```java
+public List<User> findUserListResultMap(UserQueryVo userQueryVo) throws Exception;
+```
+### 动态sql
+mybatis重点是对sql的灵活解析和处理。  
+需求:将自定义查询条件查询用户列表和查询用户列表总记录数改为动态sql  
+#### if和where
+```xml
+<!-- 动态sql -->
+	  <select id="findUserBySQL" parameterType="userQueryVo" resultType="user">
+	  	select * from user
+	  	
+	  	<!-- where标签替代了sql语句中的where关键字，该关键字可以去除sql语句中第一个and关键字 -->
+	  	<where>
+	  		<if test="user!=null">
+		  		<!-- 判断用户名是否为空，如果不为空则执行此条件 ,test中的相当于Struts2的if标签判断-->
+		  		<if test="user.username!=null and user.username!=''">
+		  			and username like '%${user.username}%'
+		  		</if>
+		  		<if test="user.sex!=null and user.sex!=''">
+		  			and sex = #{user.sex}
+		  		</if>
+		  		<!-- 还可以写很多查询条件 -->
+	  		</if>
+	  	</where>
+	  </select>
+```
+#### sql片段
+通过sql片段可以将通用的sql语句抽取出来，单独定义，在其他statement中可以引用sql片段。  
+通用的sql语句，常用:where条件、查询列
+- sql片段定义
+```xml
+<!-- sql片段 
+ 		 将用户查询条件定义为sql片段
+ 		 建议将单表的查询条件单独抽取sql片段，提高公用性
+ 		 注意：不要讲where标签放在SQL片段中
+-->
+ 	<sql id="query_user_where">
+		<if test="user!=null">
+	  		<!-- 判断用户名是否为空，如果不为空则执行此条件 ,test中的相当于Struts2的if标签判断-->
+	  		<if test="user.username!=null and user.username!=''">
+	  			and username like '%${user.username}%'
+	  		</if>
+	  		<if test="user.sex!=null and user.sex!=''">
+	  			and sex = #{user.sex}
+	  		</if>
+	  		<!-- 还可以写很多查询条件 -->
+  		</if>
+ 	</sql>
+```
+- 引用sql片段
+```xml
+<select id="findUserListBySQL" parameterType="userQueryVo" resultType="user">
+	  	select * from user
+	  	
+	  	<!-- where标签替代了sql语句中的where关键字，该关键字可以去除sql语句中第一个and关键字 -->
+	  	<where>
+	  		<include refid="query_user_where"/>
+	  		<!-- 下面还可以写其他条件或sql片段 -->
+	  	</where>
+	  </select>
+```
+#### foreach
+在statement通过foreach遍历parameterType中的集合类型。  
+需求:根据多个用户id查询用户信息。  
+- 在userQueryVo中定义List<Integer> ids
+```java
+//用户id集合
+	private List<Integer> ids;
+	
+	public List<Integer> getIds() {
+		return ids;
+	}
+
+	public void setIds(List<Integer> ids) {
+		this.ids = ids;
+	}
+```
+- 修改sql片段，增加foreach标签
+```xml
+<!-- 
+  			想要查询的sql语句拼接的最终效果：SELECT * FROM USER WHERE id IN(24,25,26);
+  			collection：指定的集合的属性
+  			open:开始循环拼接的串，如果前有and，把and也写上
+  			close：结束循环拼接的串
+  			ietm：每次循环取到的对象，随意定义
+  			separator:每两次循环中间拼接的串
+  			foreach标签体内写变化的，这里是括号内数据的变化
+  		 -->
+  		<foreach collection="ids" open="id IN(" close=")" item="id" separator=",">
+  			#{id}
+  		</foreach>
+```
+- 测试代码
+```java
+List<Integer> ids = new ArrayList<Integer>();
+		ids.add(24);
+		ids.add(25);
+		ids.add(26);
+		userQueryVo.setIds(ids);
+```
+
 
 
 
