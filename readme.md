@@ -589,7 +589,139 @@ List<Integer> ids = new ArrayList<Integer>();
 		ids.add(26);
 		userQueryVo.setIds(ids);
 ```
+### 学会分析陌生表的数据模型
+- 学习单表记录了什么东西(去学习理解需求)
+- 学习单表重要字段的意义(优先学习不能为空的字段)
+- 学习表与表之间的关系(一对一、一对多、多对多)
+    - 通过表的外键分析表之间的关系
+注意:分析表与表之间的关系是建立在具体业务意义基础之上  
+## 一对一查询
+### 需求
+查询订单信息关联查询用户信息
+### sql语句
+查询语句:先确定主查询表:订单信息表；再确定关联查询表:用户信息表  
+通过orders关联查询用户使用user_id一个外键，只能查询出一条用户记录就可以使用内连接  
+```sql
+SELECT 
+	  orders.*,
+	  user.`username`,
+	  user.`address` 
+FROM
+	  orders,
+	  USER 
+WHERE orders.`user_id` = user.`id`
+```
+### 使用resultType实现
+#### 创建pojo类
+- 一对一查询映射的pojo
+    - 创建pojo包括订单信息和用户信息，resultType才可以完成映射。
+    - 创建OrderCustom作为自定义pojo，继承sql查询列多的类
+```java
+public class OrdersCustom extends Orders{
 
+	//定义查询订单信息时需要显示的用户信息字段
+	
+	private String username;
+	private String address;
+	//getter and setter
+```
+#### OrdersCustomMapper.xml
+定义mapper.xml文件
+```xml
+<!-- 订单和用户的一对一查询，使用resultType完成 -->
+	<select id="findOrdersAndUserResultType" resultType="OrdersCustom">
+		SELECT 
+		  orders.*,
+		  user.`username`,
+		  user.`address` 
+		FROM
+		  orders,
+		  USER 
+		WHERE orders.`user_id` = user.`id`
+	</select>
+```
+#### OrdersCustomMapper.java
+```java
+/**
+	 * 使用resultType完成一对一查询
+	 * @return
+	 * @throws Exception
+	 */
+	public List<OrdersCustom> findOrdersAndUserResultType() throws Exception;
+```
+### 使用resultMap实现一对一
+- resultMap提供**一对一**关联查询的映射和**一对多**关联查询映射。
+- 一对一映射思路:将关联查询的信息映射到pojo中，如下
+    - 在Orders类中创建一个User属性，将关联查询的信息映射到User属性中。
+```java
+public class Orders {
+    private Integer id;
+
+    private Integer user_Id;
+
+    private String number;
+
+    private Date createtime;
+
+    private String note;
+    
+    //使用resultMap完成一对一映射，需要在类中定义变量,关联用户信息
+    private User user;
+    //getter and setter
+```
+#### OrdersCustomMapper.xml
+```xml
+<!-- 订单和用户的一对一查询，使用resultMap完成 -->
+	<select id="findOrdersAndUserResultMap" resultMap="ordersAndUser">
+		SELECT 
+		  orders.*,
+		  user.`username`,
+		  user.`address` 
+		FROM
+		  orders,
+		  USER 
+		WHERE orders.`user_id` = user.`id`
+	</select>
+```
+#### 定义resultMap
+```xml
+<!-- 定义订单和用户的resultMap -->
+	<resultMap type="orders" id="ordersAndUser">
+		<!-- 完成订单信息的映射配置 -->
+		<!-- id：订单关联用户查询的唯一标识，此处的id是订单的id -->
+		<id column="id" property="id"/>
+		<result column="user_Id" property="user_Id"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		<result column="note" property="note"/>
+		
+		<!-- 完成用户信息的映射配置 ,关联信息的映射-->
+		<!-- 
+			association：用于将关联信息映射到单个pojo（这里是一对一查询，所以是单个）
+			property:要将关联信息映射到orders中的哪个属性
+			javaType：将关联信息映射到orders中的属性的类型，因为SqlMapConfig.xml开启了别名，所以是user类型
+		 -->
+		<association property="user" javaType="user">
+			<!-- id:关联信息的唯一标识，这里是user的id -->
+			<id column="id" property="id"/>
+			<result column="username" property="username"/>
+			<result column="address" property="address"/>
+		</association>
+	</resultMap>
+```
+#### OrdersCustomMapper.java
+```java
+/**
+	 * 使用resultMap完成一对一查询
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Orders> findOrdersAndUserResultMap() throws Exception;
+```
+### 小结
+- resultType:要自定义pojo保证sql查询列和pojo的属性对应，这种方法相对较简单，所以应用广泛。
+- resultMap：**使用association完成一对一映射**需要配置一个resultMap，过程有点复杂，如果要实现**延迟加载**就只能用resultMap实现 ，如果为了方便**对关联信息进行解析**，也可以用association将关联信息映射到pojo中方便解析。
+## 一对多查询
 
 
 
