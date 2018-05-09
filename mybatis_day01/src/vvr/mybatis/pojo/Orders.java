@@ -14,8 +14,22 @@ public class Orders {
 
     private String note;
     
+    //使用resultMap完成一对一映射，需要在类中定义变量,关联用户信息
+    private User user;
+    
+    //使用resultMap完成一对多的映射，关联订单明细
+    private List<Orderdetail> orderdetails;
+    
 
-    public Integer getId() {
+    public User getUser() {
+		return user;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
+	}
+
+	public Integer getId() {
         return id;
     }
 

@@ -5,6 +5,79 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 <mapper namespace="vvr.mybatis.mapper.OrdersCustomMapper">
 
+
+	<!-- 定义订单和用户的resultMap -->
+	<resultMap type="orders" id="ordersAndUser">
+		<!-- 完成订单信息的映射配置 -->
+		<!-- id：订单关联用户查询的唯一标识，此处的id是订单的id -->
+		<id column="id" property="id"/>
+		<result column="user_Id" property="user_Id"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		<result column="note" property="note"/>
+		
+		<!-- 完成用户信息的映射配置 ,关联信息的映射-->
+		<!-- 
+			association：用于将关联信息映射到单个pojo（这里是一对一查询，所以是单个）
+			property:要将关联信息映射到orders中的哪个属性
+			javaType：将关联信息映射到orders中的属性的类型，因为SqlMapConfig.xml开启了别名，所以是user类型
+		 -->
+		<association property="user" javaType="user">
+			<!-- id:关联信息的唯一标识，这里是user的id -->
+			<id column="id" property="id"/>
+			<result column="username" property="username"/>
+			<result column="address" property="address"/>
+		</association>
+	</resultMap>
+	
+	<!-- 定义订单和订单明细的resultMap，使用继承，继承自ordersAndUser，这样就可以不用再映射订单和用户，直接映射订单明细 -->
+	<resultMap type="orders" id="ordersAndOrderdetail" extends="ordersAndUser">
+		<!-- 映射订单信息和用户，这里使用了继承 -->
+		
+		<!-- 映射订单明细信息
+			collection:用于集合，用于一对多
+			property:要将关联信息映射到orders中的哪个属性
+			ofType：集合中pojo的类型，注意这里不是javaType，这里也可以使用别名
+		 -->
+		<collection property="orderdetails" ofType="vvr.mybatis.pojo.Orderdetail">
+			<id column="orderdetail_id" property="id"/>
+			<result column="items_num" property="itemsNum"/>
+			<result column="items_id" property="itemsId"/>
+		</collection>
+	</resultMap>
+	
+	<!-- 定义userOrderDetail的resultMap，完成复杂一对多映射查询
+		此时不能使用继承，因为需求已经不一样了
+	 -->
+	 <resultMap type="user" id="userOrderDetail">
+	 	<!-- 映射用户信息 -->
+	 	<id column="user_id" property="id"/>
+	 	<result column="username" property="username"/>
+	 	<result column="sex" property="sex"/>
+	 	<!-- 映射订单信息 -->
+	 	<collection property="orderList" ofType="orders">
+	 		<id column="id" property="id"/>
+			<result column="user_Id" property="user_Id"/>
+			<result column="number" property="number"/>
+			<result column="createtime" property="createtime"/>
+			<result column="note" property="note"/>
+			
+			<!-- 映射订单明细信息，这里是关键，因为在orders中定义的订单明细，一层层套 -->
+			<collection property="orderdetails" ofType="vvr.mybatis.pojo.Orderdetail">
+				<id column="orderdetail_id" property="id"/>
+				<result column="items_num" property="itemsNum"/>
+				<result column="items_id" property="itemsId"/>
+				
+				<!-- 映射商品信息，这里跟上面一样 -->
+				<association property="items" javaType="items">
+					<id column="ietms_id" property="id"/>
+					<result column="name" property="name"/>
+					<result column="detail" property="detail"/>
+				</association>
+			</collection>
+	 	</collection>
+	 </resultMap>
+
 	<!-- 订单和用户的一对一查询，使用resultType完成 -->
 	<select id="findOrdersAndUserResultType" resultType="OrdersCustom">
 		SELECT 
@@ -15,6 +88,57 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		  orders,
 		  USER 
 		WHERE orders.`user_id` = user.`id`
+	</select>
+	
+	<!-- 订单和用户的一对一查询，使用resultMap完成 -->
+	<select id="findOrdersAndUserResultMap" resultMap="ordersAndUser">
+		SELECT 
+		  orders.*,
+		  user.`username`,
+		  user.`address` 
+		FROM
+		  orders,
+		  USER 
+		WHERE orders.`user_id` = user.`id`
+	</select>
+	
+	<!-- 订单和订单明细的一对多查询，使用resultMap完成 -->
+	<select id="findOrdersAndOrderdetailResultMap" resultMap="ordersAndOrderdetail">
+		SELECT 
+		  orders.*,
+		  user.`username`,
+		  user.`address`,
+		  orderdetail.id orderdetail_id,
+		  orderdetail.items_num,
+		  orderdetail.items_id
+		FROM
+		  orders,
+		  USER,
+		  orderdetail
+		WHERE orders.user_id = user.id  AND orders.id = orderdetail.orders_id
+	</select>
+	
+	<!-- 一对多复杂查询
+		查询所有用户信息，关联查询订单及订单明细信息及商品信息
+		此时的需求，主要查询的是用户为准
+		一个用户多个订单，一个订单多个订单明细，一个订单明细一个商品信息
+	 -->
+	 <select id="findUserOrderDetail" resultMap="userOrderDetail">
+		SELECT 
+		  orders.*,
+		  user.username,
+		  user.sex ,
+		  orderdetail.id orderdetail_id,
+		  orderdetail.items_num,
+		  orderdetail.items_id,
+		  items.`name`,
+		  items.`detail`
+		FROM
+		  orders,
+		  USER,
+		  orderdetail,
+		  items
+		WHERE orders.user_id = user.id  AND orders.id = orderdetail.orders_id AND items.`id` = orderdetail.`items_id`
 	</select>
 
 </mapper>

@@ -1,6 +1,7 @@
 package vvr.mybatis.pojo;
 
 import java.util.Date;
+import java.util.List;
 
 public class User {
 
@@ -9,6 +10,16 @@ public class User {
 	private String sex;// 性别
 	private Date birthday;// 出生
 	private String address;// 地址
+	
+	//多个订单
+	private List<Orders> orderList;
+	
+	public List<Orders> getOrderList() {
+		return orderList;
+	}
+	public void setOrderList(List<Orders> orderList) {
+		this.orderList = orderList;
+	}
 	public int getId() {
 		return id;
 	}

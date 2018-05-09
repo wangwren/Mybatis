@@ -8,8 +8,20 @@ public class Orderdetail {
     private Integer itemsId;
 
     private Integer itemsNum;
+    
+    //商品信息
+    private Items items;
+    
 
-    public Integer getId() {
+    public Items getItems() {
+		return items;
+	}
+
+	public void setItems(Items items) {
+		this.items = items;
+	}
+
+	public Integer getId() {
         return id;
     }
 
