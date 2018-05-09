@@ -6,7 +6,7 @@ import java.util.List;
 public class Orders {
     private Integer id;
 
-    private Integer userId;
+    private Integer user_Id;
 
     private String number;
 
@@ -23,15 +23,15 @@ public class Orders {
         this.id = id;
     }
 
-    public Integer getUserId() {
-        return userId;
-    }
+    public Integer getUser_Id() {
+		return user_Id;
+	}
 
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
+	public void setUser_Id(Integer user_Id) {
+		this.user_Id = user_Id;
+	}
 
-    public String getNumber() {
+	public String getNumber() {
         return number;
     }
 
