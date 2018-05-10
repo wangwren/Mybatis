@@ -722,8 +722,313 @@ public class Orders {
 - resultType:要自定义pojo保证sql查询列和pojo的属性对应，这种方法相对较简单，所以应用广泛。
 - resultMap：**使用association完成一对一映射**需要配置一个resultMap，过程有点复杂，如果要实现**延迟加载**就只能用resultMap实现 ，如果为了方便**对关联信息进行解析**，也可以用association将关联信息映射到pojo中方便解析。
 ## 一对多查询
+- 需求:查询所有订单信息及订单下的订单明细
+- sql语句
+    - 主查询表:订单表
+    - 关联查询:订单明细
+```sql
+SELECT 
+	  orders.*,
+	  user.`username`,
+	  user.`address`,
+	  orderdetail.id orderdetail_id,
+	  orderdetail.items_num,
+	  orderdetail.items_id
+FROM
+	  orders,
+	  USER,
+	  orderdetail
+WHERE orders.user_id = user.id  AND orders.id = orderdetail.orders_id
+```
+### resultMap进行一对多映射思路
+resultMap**提供collection完成**关联信息映射到集合对象中。  
+在orders类中创建集合属性:  
+```java
+public class Orders {
+    private Integer id;
 
+    private Integer user_Id;
 
+    private String number;
+
+    private Date createtime;
+
+    private String note;
+    
+    //使用resultMap完成一对一映射，需要在类中定义变量,关联用户信息
+    private User user;
+    
+    //使用resultMap完成一对多的映射，关联订单明细
+    private List<Orderdetail> orderdetails;
+    //getter and setter
+```
+### OrdersCustomMapper.xml
+```xml
+<!-- 订单和订单明细的一对多查询，使用resultMap完成 -->
+	<select id="findOrdersAndOrderdetailResultMap" resultMap="ordersAndOrderdetail">
+		SELECT 
+		  orders.*,
+		  user.`username`,
+		  user.`address`,
+		  orderdetail.id orderdetail_id,
+		  orderdetail.items_num,
+		  orderdetail.items_id
+		FROM
+		  orders,
+		  USER,
+		  orderdetail
+		WHERE orders.user_id = user.id  AND orders.id = orderdetail.orders_id
+	</select>
+```
+### resultMap定义
+```xml
+<!-- 定义订单和订单明细的resultMap，使用继承，继承自ordersAndUser，这样就可以不用再映射订单和用户，直接映射订单明细 -->
+	<resultMap type="orders" id="ordersAndOrderdetail" extends="ordersAndUser">
+		<!-- 映射订单信息和用户，这里使用了继承 -->
+		
+		<!-- 映射订单明细信息
+			collection:用于集合，用于一对多
+			property:要将关联信息映射到orders中的哪个属性
+			ofType：集合中pojo的类型，注意这里不是javaType，这里也可以使用别名
+		 -->
+		<collection property="orderdetails" ofType="vvr.mybatis.pojo.Orderdetail">
+			<id column="orderdetail_id" property="id"/>
+			<result column="items_num" property="itemsNum"/>
+			<result column="items_id" property="itemsId"/>
+		</collection>
+	</resultMap>
+```
+### OrdersCustomMapper.java
+```java
+/**
+	 * 使用resultMap完成一对多查询
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Orders> findOrdersAndOrderdetailResultMap() throws Exception;
+```
+- 使用resultMap实现一对多，用collection标签，可以对重复数据归类。
+- 测试
+```java
+/**
+	 * 使用resultMap实现一对多查询
+	 * 使用resultMap可以忽略重复数据，比如下面代码数据库查询是四条，有两条订单信息是重复的
+	 * 如果使用resultType实现一对多查询，就会出现重复查询，因为resultType还要写扩展类，需要把要查询的字段都定义出来
+	 * @throws Exception
+	 */
+	@Test
+	public void findOrdersAndOrderdetailResultMap() throws Exception {
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		OrdersCustomMapper ordersCustomMapper = sqlSession.getMapper(OrdersCustomMapper.class);
+		List<Orders> list = ordersCustomMapper.findOrdersAndOrderdetailResultMap();
+		System.out.println(list);
+	}
+```
+## 一对多查询(复杂)
+-  需求:查询所有用户信息，关联查询订单及订单明细信息及商品信息
+- sql语句
+    - 主查询表:用户表
+    - 关联查询:订单、订单明细、商品信息
+```sql
+SELECT 
+	  orders.*,
+	  user.username,
+	  user.sex ,
+	  orderdetail.id orderdetail_id,
+	  orderdetail.items_num,
+	  orderdetail.items_id,
+	  items.`name`,
+	  items.`detail`
+FROM
+	  orders,
+	  USER,
+	  orderdetail,
+	  items
+WHERE orders.user_id = user.id  AND orders.id = orderdetail.orders_id AND items.`id` = orderdetail.`items_id`
+```
+### pojo定义
+- 一个用户可以有多个订单，所以在user.java中创建映射属性:集合List<Orders> orderlist
+- 一个订单信息可以有多个订单明细，所以在orders.java中创建映射属性:集合List<Ordersdetail> orderdetails
+- 一个订单明细只有一个商品信息，所以在Ordersdetail.java中创建商品属性:Items items
+#### User.java
+```java
+public class User {
+
+	private int id;
+	private String username;// 用户名
+	private String sex;// 性别
+	private Date birthday;// 出生
+	private String address;// 地址
+	
+	//多个订单
+	private List<Orders> orderList;
+	
+	//getter and setter
+``` 
+#### Orders.java
+```java
+public class Orders {
+    private Integer id;
+
+    private Integer user_Id;
+
+    private String number;
+
+    private Date createtime;
+
+    private String note;
+    
+    //使用resultMap完成一对一映射，需要在类中定义变量,关联用户信息
+    private User user;
+    
+    //使用resultMap完成一对多的映射，关联订单明细
+    private List<Orderdetail> orderdetails;
+    
+    //getter and setter
+```
+#### Ordersdetail.java
+```java
+public class Orderdetail {
+    private Integer id;
+
+    private Integer ordersId;
+
+    private Integer itemsId;
+
+    private Integer itemsNum;
+    
+    //商品信息
+    private Items items;
+    
+    //getter and setter
+```
+### OrdersCustomMapper.xml
+```xml
+<!-- 一对多复杂查询
+		查询所有用户信息，关联查询订单及订单明细信息及商品信息
+		此时的需求，主要查询的是用户为准
+		一个用户多个订单，一个订单多个订单明细，一个订单明细一个商品信息
+	 -->
+	 <select id="findUserOrderDetail" resultMap="userOrderDetail">
+		SELECT 
+		  orders.*,
+		  user.username,
+		  user.sex ,
+		  orderdetail.id orderdetail_id,
+		  orderdetail.items_num,
+		  orderdetail.items_id,
+		  items.`name`,
+		  items.`detail`
+		FROM
+		  orders,
+		  USER,
+		  orderdetail,
+		  items
+		WHERE orders.user_id = user.id  AND orders.id = orderdetail.orders_id AND items.`id` = orderdetail.`items_id`
+	</select>
+```
+### resultMap定义
+- 一定要注意resultMap中这里映射的层级关系
+```xml
+<!-- 定义userOrderDetail的resultMap，完成复杂一对多映射查询
+		此时不能使用继承，因为需求已经不一样了
+	 -->
+	 <resultMap type="user" id="userOrderDetail">
+	 	<!-- 映射用户信息 -->
+	 	<id column="user_id" property="id"/>
+	 	<result column="username" property="username"/>
+	 	<result column="sex" property="sex"/>
+	 	<!-- 映射订单信息 -->
+	 	<collection property="orderList" ofType="orders">
+	 		<id column="id" property="id"/>
+			<result column="user_Id" property="user_Id"/>
+			<result column="number" property="number"/>
+			<result column="createtime" property="createtime"/>
+			<result column="note" property="note"/>
+			
+			<!-- 映射订单明细信息，这里是关键，因为在orders中定义的订单明细，一层层套 -->
+			<collection property="orderdetails" ofType="vvr.mybatis.pojo.Orderdetail">
+				<id column="orderdetail_id" property="id"/>
+				<result column="items_num" property="itemsNum"/>
+				<result column="items_id" property="itemsId"/>
+				
+				<!-- 映射商品信息，这里跟上面一样 -->
+				<association property="items" javaType="items">
+					<id column="ietms_id" property="id"/>
+					<result column="name" property="name"/>
+					<result column="detail" property="detail"/>
+				</association>
+			</collection>
+	 	</collection>
+	 </resultMap>
+```
+### OrdersCustomMapper.java
+```java
+/**
+	 * 使用resultMap完成复杂的一对多查询
+	 * @return
+	 * @throws Exception
+	 */
+	public List<User> findUserOrderDetail() throws Exception;
+```
+### 测试
+```java
+/**
+	 * 复杂一对多查询
+	 * @throws Exception
+	 */
+	@Test
+	public void findUserOrderDetail() throws Exception {
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		OrdersCustomMapper ordersCustomMapper = sqlSession.getMapper(OrdersCustomMapper.class);
+		List<User> list = ordersCustomMapper.findUserOrderDetail();
+		System.out.println(list);
+	}
+```
+## 多对多查询
+- 一对多是多对多的特例
+### 需求1
+- 查询显示字段:用户账号、用户名称、用户性别、商品名称、商品价格
+- 可以使用resultType实现
+- SQL语句
+```sql
+SELECT 
+  user.`id`,
+  user.`username`,
+  user.`sex`,
+  items.`name`,
+  items.`price` 
+FROM
+  USER,
+  items,
+  orders,
+  orderdetail
+WHERE user.`id` = 10 AND user.`id` = orders.`user_id` 
+  AND orders.`id` = orderdetail.`orders_id`
+  AND orderdetail.`items_id` = items.`id` ;
+
+```
+### 需求2
+- 查询显示字段:用户账号、用户名称、购买商品数量、商品明细
+- 可以使用resultMap将用户购买的商品明细映射到user对象中。
+- sql语句
+```sql
+SELECT ：
+  user.`id`,
+  user.`username`,
+  user.`sex`,
+  orderdetail.`items_num`,
+  orderdetail.*
+FROM
+  USER,
+  items,
+  orders,
+  orderdetail
+WHERE user.`id` = orders.`user_id` 
+  AND orders.`id` = orderdetail.`orders_id`
+  AND orderdetail.`items_id` = items.`id` ;
+
+```
 
 
 
