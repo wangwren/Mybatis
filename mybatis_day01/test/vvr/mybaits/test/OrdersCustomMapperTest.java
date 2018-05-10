@@ -82,6 +82,10 @@ public class OrdersCustomMapperTest {
 		System.out.println(list);
 	}
 	
+	/**
+	 * 复杂一对多查询
+	 * @throws Exception
+	 */
 	@Test
 	public void findUserOrderDetail() throws Exception {
 		SqlSession sqlSession = sqlSessionFactory.openSession();
