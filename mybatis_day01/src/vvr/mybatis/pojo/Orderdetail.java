@@ -37,15 +37,17 @@ public class Orderdetail {
         this.ordersId = ordersId;
     }
 
-    public Integer getItemsId() {
-        return itemsId;
-    }
+    
 
-    public void setItemsId(Integer itemsId) {
-        this.itemsId = itemsId;
-    }
+	public Integer getItemsId() {
+		return itemsId;
+	}
 
-    public Integer getItemsNum() {
+	public void setItemsId(Integer itemsId) {
+		this.itemsId = itemsId;
+	}
+
+	public Integer getItemsNum() {
         return itemsNum;
     }
 
@@ -53,10 +55,5 @@ public class Orderdetail {
         this.itemsNum = itemsNum;
     }
 
-	@Override
-	public String toString() {
-		return "Orderdetail [id=" + id + ", ordersId=" + ordersId
-				+ ", itemsId=" + itemsId + ", itemsNum=" + itemsNum + "]";
-	}
     
 }

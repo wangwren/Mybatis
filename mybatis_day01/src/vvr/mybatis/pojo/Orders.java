@@ -21,7 +21,15 @@ public class Orders {
     private List<Orderdetail> orderdetails;
     
 
-    public User getUser() {
+    public List<Orderdetail> getOrderdetails() {
+		return orderdetails;
+	}
+
+	public void setOrderdetails(List<Orderdetail> orderdetails) {
+		this.orderdetails = orderdetails;
+	}
+
+	public User getUser() {
 		return user;
 	}
 

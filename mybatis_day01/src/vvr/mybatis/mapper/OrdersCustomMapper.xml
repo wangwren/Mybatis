@@ -30,6 +30,35 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		</association>
 	</resultMap>
 	
+	
+	<!-- 配置一对一延迟加载 -->
+	<resultMap type="orders" id="OrdersCustomLazyLoading">
+		<!-- 完成订单信息的映射配置 -->
+		<!-- id：订单关联用户查询的唯一标识，此处的id是订单的id -->
+		<id column="id" property="id"/>
+		<result column="user_Id" property="user_Id"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		<result column="note" property="note"/>
+		
+		<!-- 配置用户的延迟加载信息 
+			property:将关联查询的用户信息映射到Orders中的哪个属性中
+			select:延迟加载执行的sql所在的statement所在的id，如果不在一个mapper.xml中，则前面加namespace
+				sql:这里所执行的sql是根据用户id查询用户信息
+			column:关联查询的列，即Orders中外键。因为先查询订单信息，此时就已经查询出用户的id，再将此id指定，
+			查询用户的sql是根据用户id，所以这里Orders查询出的user_id，用来当做查询用户的条件了。（自己理解的）
+			
+			这里没写javaType，因为已经指定sql的id，statement已经指定好了
+		-->
+		<association property="user" select="vvr.mybatis.mapper.UserMapper.findById" column="user_id">
+		
+		</association>
+	</resultMap>
+	
+	
+	
+	
+	
 	<!-- 定义订单和订单明细的resultMap，使用继承，继承自ordersAndUser，这样就可以不用再映射订单和用户，直接映射订单明细 -->
 	<resultMap type="orders" id="ordersAndOrderdetail" extends="ordersAndUser">
 		<!-- 映射订单信息和用户，这里使用了继承 -->
@@ -45,6 +74,51 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<result column="items_id" property="itemsId"/>
 		</collection>
 	</resultMap>
+	
+	
+	<!-- 一对多延迟加载 ，可以继承OrdersCustomLazyLoading-->
+	<resultMap type="orders" id="ordersAndOrderdetailLazyLoading">
+		
+		<!-- 完成订单信息的映射配置 -->
+		<!-- id：订单关联用户查询的唯一标识，此处的id是订单的id -->
+		<id column="id" property="id"/>
+		<result column="user_Id" property="user_Id"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		<result column="note" property="note"/>
+		
+		<!-- 配置用户的延迟加载信息 
+			property:将关联查询的用户信息映射到Orders中的哪个属性中
+			select:延迟加载执行的sql所在的statement所在的id，如果不在一个mapper.xml中，则前面加namespace
+				sql:这里所执行的sql是根据用户id查询用户信息
+			column:关联查询的列，即Orders中外键。因为先查询订单信息，此时就已经查询出用户的id，再将此id指定，
+			查询用户的sql是根据用户id，所以这里Orders查询出的user_id，用来当做查询用户的条件了。（自己理解的）
+			
+			这里没写javaType，因为已经指定sql的id，statement已经指定好了
+		-->
+		<association property="user" select="vvr.mybatis.mapper.UserMapper.findById" column="user_id">
+		
+		</association>
+		
+		<!-- 主要配置订单明细（多方）
+			这里column中指定的id是Orders表的id，
+			因为sql是根据订单编号查询订单明细
+		 -->
+		<collection property="orderdetails" select="findOrderdetailByOrdersId" column="id">
+			<!-- 在这配关系没用 -->
+			
+		</collection>
+	</resultMap>
+	
+	<!-- orderdetail的映射关系 -->
+	<resultMap type="orderdetail" id="orderdetailResultMap">
+		<id column="id" property="id"/>
+		<result column="orders_id" property="ordersId"/>
+		<result column="items_id" property="itemsId"/>
+		<result column="items_num" property="itemsNum"/>
+	</resultMap>
+	
+	
 	
 	<!-- 定义userOrderDetail的resultMap，完成复杂一对多映射查询
 		此时不能使用继承，因为需求已经不一样了
@@ -139,6 +213,38 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		  orderdetail,
 		  items
 		WHERE orders.user_id = user.id  AND orders.id = orderdetail.orders_id AND items.`id` = orderdetail.`items_id`
+	</select>
+	
+	
+	<!-- 一对一查询订单和用户信息，使用延迟加载，
+		先查询订单信息，当用到用户信息时，在查询用户，
+		所以这里写查询订单的sql，resultMap中写查询用户的sql
+	 -->
+	<select id="findOrdersAndUserLazyLoading" resultMap="OrdersCustomLazyLoading">
+		SELECT 
+		  *
+		FROM
+		  orders
+	</select>
+	
+	
+	<!-- 一对多延迟加载，订单和订单明细的一对多查询-->
+	<select id="findOrdersAndOrderdetailLazyLoading" resultMap="ordersAndOrderdetailLazyLoading">
+		SELECT 
+			*
+		FROM
+		  orders
+	</select>
+	
+	<!-- 根据订单编号查询订单明细 
+		如果这里写resultType就需要注意列明和属性名相同
+	-->
+	<select id="findOrderdetailByOrdersId" parameterType="int" resultMap="orderdetailResultMap">
+		SELECT 
+		  * 
+		FROM
+		  orderdetail 
+		WHERE orders_id = #{ordersId} 
 	</select>
 
 </mapper>

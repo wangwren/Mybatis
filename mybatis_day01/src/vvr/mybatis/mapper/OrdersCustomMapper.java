@@ -35,4 +35,18 @@ public interface OrdersCustomMapper {
 	 * @throws Exception
 	 */
 	public List<User> findUserOrderDetail() throws Exception;
+	
+	/**
+	 *  一对一延迟加载，订单与用户间
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Orders> findOrdersAndUserLazyLoading() throws Exception;
+	
+	/**
+	 * 一对多延迟加载
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Orders> findOrdersAndOrderdetailLazyLoading() throws Exception;
 }

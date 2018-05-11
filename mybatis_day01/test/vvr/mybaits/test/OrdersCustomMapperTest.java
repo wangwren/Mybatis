@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import vvr.mybatis.mapper.OrdersCustomMapper;
+import vvr.mybatis.pojo.Orderdetail;
 import vvr.mybatis.pojo.Orders;
 import vvr.mybatis.pojo.OrdersCustom;
 import vvr.mybatis.pojo.User;
@@ -92,5 +93,44 @@ public class OrdersCustomMapperTest {
 		OrdersCustomMapper ordersCustomMapper = sqlSession.getMapper(OrdersCustomMapper.class);
 		List<User> list = ordersCustomMapper.findUserOrderDetail();
 		System.out.println(list);
+	}
+	
+	/**
+	 * 一对一延迟加载
+	 * @throws Exception 
+	 */
+	@Test
+	public void findOrdersAndUserLazyLoading() throws Exception {
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		OrdersCustomMapper ordersCustomMapper = sqlSession.getMapper(OrdersCustomMapper.class);
+		List<Orders> list = ordersCustomMapper.findOrdersAndUserLazyLoading();
+		
+		//在getUser()时才会延迟加载，即执行延迟加载语句
+		User user = list.get(0).getUser();
+		
+		for(Orders od : list) {
+			
+			System.out.println(od.getUser().getId());
+			System.out.println("==========");
+		}
+	}
+	
+	/**
+	 * 一对多延迟加载
+	 * @throws Exception
+	 */
+	@Test
+	public void findOrdersAndOrderdetailLazyLoading() throws Exception{
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		OrdersCustomMapper ordersCustomMapper = sqlSession.getMapper(OrdersCustomMapper.class);
+		List<Orders> list = ordersCustomMapper.findOrdersAndOrderdetailLazyLoading();
+		
+		for(Orders or : list) {
+			List<Orderdetail> delist = or.getOrderdetails();
+			System.out.println("哈哈哈" + delist.get(0).getItemsNum());
+		}
+		
+		System.out.println(list);
+		//list.get(0).getOrderdetails().get(0).getOrdersId();
 	}
 }
