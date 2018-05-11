@@ -1029,8 +1029,222 @@ WHERE user.`id` = orders.`user_id`
   AND orderdetail.`items_id` = items.`id` ;
 
 ```
+## 延迟加载
+### 使用延迟加载意义
+- 在进行数据查询时，**为了提高数据库查询性能**，尽量使用单表查询，因为单表查询比多表关联查询速度快。
+- 如果查询单表就可以满足需求，一开始先查询单表，当需要关联信息时，再关联查询，当需要关联信息再查询这个叫延迟加载。
+- mybatis中**resultMap提供延迟加载功能**，通过resultMap配置延迟加载。
+### 配置mybatis支持延迟加载
 
+|设置项|描述|允许值|
+|------------|------------|-----------|
+|lazyLoadingEnabled|全局性设置懒加载。如果设为‘false’，则所有相关联的都会被初始化加载。|true，false|
+|aggressiveLazyLoading|当设置为‘true’的时候，懒加载的对象可能被任何懒属性全部加载。否则，每个属性都按需加载|true，false|
 
+```xml
+<!--SqlMapConfig.xml-->
+<!-- 全局配置参数 -->
+	<settings>
+		<!-- 延迟加载总开关 -->
+		<setting name="lazyLoadingEnabled" value="true" />	
+		<!-- 设置按需加载 ，设置成false才会按需加载-->
+		<setting name="aggressiveLazyLoading" value="false" />
+	</settings>
+```
+### 延迟加载实现
+- 一对一延迟加载，即在association标签配置select内容。
+- 一对多延迟加载同一对一延迟加载，在collection标签中配置select内容。
+#### 实现思路
+- 需求:查询订单及用户的信息，一对一查询
+    - 刚开始只查询订单信息
+    - 当需要用户时调用Orders类中的getUser()方法执行延迟加载，向数据库发出sql
+#### OrdersCustomMapper.xml
+```xml
+<!-- 一对多延迟加载，订单和订单明细的一对多查询-->
+	<select id="findOrdersAndOrderdetailLazyLoading" resultMap="ordersAndOrderdetailLazyLoading">
+		SELECT 
+			*
+		FROM
+		  orders
+	</select>
+```
+#### 定义resultMap
+```xml
+<!-- 配置一对一延迟加载 -->
+	<resultMap type="orders" id="OrdersCustomLazyLoading">
+		<!-- 完成订单信息的映射配置 -->
+		<!-- id：订单关联用户查询的唯一标识，此处的id是订单的id -->
+		<id column="id" property="id"/>
+		<result column="user_Id" property="user_Id"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		<result column="note" property="note"/>
+		
+		<!-- 配置用户的延迟加载信息 
+			property:将关联查询的用户信息映射到Orders中的哪个属性中
+			select:延迟加载执行的sql所在的statement所在的id，如果不在一个mapper.xml中，则前面加namespace
+				sql:这里所执行的sql是根据用户id查询用户信息
+			column:关联查询的列，即Orders中外键。因为先查询订单信息，此时就已经查询出用户的id，再将此id指定，
+			查询用户的sql是根据用户id，所以这里Orders查询出的user_id，用来当做查询用户的条件了。（自己理解的）
+			
+			这里没写javaType，因为已经指定sql的id，statement已经指定好了
+		-->
+		<association property="user" select="vvr.mybatis.mapper.UserMapper.findById" column="user_id">
+		
+		</association>
+	</resultMap>
+```
+#### OrdersCustomMapper.java
+```java
+/**
+	 *  一对一延迟加载，订单与用户间
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Orders> findOrdersAndUserLazyLoading() throws Exception;
+```
+#### 测试代码
+```java
+/**
+	 * 一对一延迟加载
+	 * @throws Exception 
+	 */
+	@Test
+	public void findOrdersAndUserLazyLoading() throws Exception {
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		OrdersCustomMapper ordersCustomMapper = sqlSession.getMapper(OrdersCustomMapper.class);
+		List<Orders> list = ordersCustomMapper.findOrdersAndUserLazyLoading();
+		
+		//在getUser()时才会延迟加载，即执行延迟加载语句
+		User user = list.get(0).getUser();
+		
+		for(Orders od : list) {
+			
+			System.out.println(od.getUser().getId());
+			System.out.println("==========");
+		}
+	}
+```
+### 一对多延迟加载
+- 一对多延迟加载同一对一延迟加载，在collection标签中配置select内容。
+- 需求:订单和订单明细的一对多查询
+#### OrdersCustomMapper.xml
+```xml
+<!-- 一对多延迟加载，订单和订单明细的一对多查询-->
+	<select id="findOrdersAndOrderdetailLazyLoading" resultMap="ordersAndOrderdetailLazyLoading">
+		SELECT 
+			*
+		FROM
+		  orders
+	</select>
+	
+	<!-- 根据订单编号查询订单明细 
+		如果这里写resultType就需要注意列明和属性名相同
+	-->
+	<select id="findOrderdetailByOrdersId" parameterType="int" resultMap="orderdetailResultMap">
+		SELECT 
+		  * 
+		FROM
+		  orderdetail 
+		WHERE orders_id = #{ordersId} 
+	</select>
+```
+**注意:这里查询的orderdetail表必须定义一个resultMap，因为类中属性和表中列不对应，在collection标签中映射不好使,否则没有数据**  
+#### 定义resultMap
+```xml
+<!-- 一对多延迟加载 ，可以继承OrdersCustomLazyLoading-->
+	<resultMap type="orders" id="ordersAndOrderdetailLazyLoading">
+		
+		<!-- 完成订单信息的映射配置 -->
+		<!-- id：订单关联用户查询的唯一标识，此处的id是订单的id -->
+		<id column="id" property="id"/>
+		<result column="user_Id" property="user_Id"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		<result column="note" property="note"/>
+		
+		<!-- 配置用户的延迟加载信息 
+			property:将关联查询的用户信息映射到Orders中的哪个属性中
+			select:延迟加载执行的sql所在的statement所在的id，如果不在一个mapper.xml中，则前面加namespace
+				sql:这里所执行的sql是根据用户id查询用户信息
+			column:关联查询的列，即Orders中外键。因为先查询订单信息，此时就已经查询出用户的id，再将此id指定，
+			查询用户的sql是根据用户id，所以这里Orders查询出的user_id，用来当做查询用户的条件了。（自己理解的）
+			
+			这里没写javaType，因为已经指定sql的id，statement已经指定好了
+		-->
+		<association property="user" select="vvr.mybatis.mapper.UserMapper.findById" column="user_id">
+		
+		</association>
+		
+		<!-- 主要配置订单明细（多方）
+			这里column中指定的id是Orders表的id，
+			因为sql是根据订单编号查询订单明细
+		 -->
+		<collection property="orderdetails" select="findOrderdetailByOrdersId" column="id">
+			<!-- 在这配关系没用 -->
+			
+		</collection>
+	</resultMap>
+	
+	<!-- orderdetail的映射关系 -->
+	<resultMap type="orderdetail" id="orderdetailResultMap">
+		<id column="id" property="id"/>
+		<result column="orders_id" property="ordersId"/>
+		<result column="items_id" property="itemsId"/>
+		<result column="items_num" property="itemsNum"/>
+	</resultMap>
+```
+#### OrdersCustomMappper.java
+```java
+/**
+	 * 一对多延迟加载
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Orders> findOrdersAndOrderdetailLazyLoading() throws Exception;
+```
+#### 测试
+```java
+/**
+	 * 一对多延迟加载
+	 * @throws Exception
+	 */
+	@Test
+	public void findOrdersAndOrderdetailLazyLoading() throws Exception{
+		SqlSession sqlSession = sqlSessionFactory.openSession();
+		OrdersCustomMapper ordersCustomMapper = sqlSession.getMapper(OrdersCustomMapper.class);
+		List<Orders> list = ordersCustomMapper.findOrdersAndOrderdetailLazyLoading();
+		
+		for(Orders or : list) {
+			List<Orderdetail> delist = or.getOrderdetails();
+			System.out.println("哈哈哈" + delist.get(0).getItemsNum());
+		}
+		
+		System.out.println(list);
+		//list.get(0).getOrderdetails().get(0).getOrdersId();
+	}
+```
+## resultType、resultMap、延迟加载使用场景
+### 延迟加载
+- 延迟加载实现的方法多种多样，在只查询单表就可以满足需求，为了提高数据库查询性能使用延迟加载，再查询关联信息。
+- mybatis提供延迟加载的功能用于service层
+### resultType
+- 作用
+    - 将查询结果按照sql列名pojo属性名一致性映射到pojo中
+- 场合
+    - 常见一些明细记录的展示，将关联查询信息全部展示在页面时，此时可直接使用resultType将每一条记录映射到pojo中，在前端页面遍历list(list中是pojo)即可。
+###resultMap
+- 使用association和collection完成一对一和一对多高级映射。
+- association:
+    - 作用:
+        - 将关联查询信息映射到一个pojo类中。
+    - 场合:
+        - 为了**方便获取关联信息**可以使用association将关联订单映射为pojo，比如:查询订单及关联用户信息。
+- collection:
+    - 作用:
+        - 将关联查询信息映射到一个list集合中。
+    - 场合:
+        - 为了**方便获取关联信息**可以使用collection将关联信息映射到list集合中，比如，可使用collection将模块和功能列表映射到list中。
 
 
 
