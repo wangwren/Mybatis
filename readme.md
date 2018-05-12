@@ -1245,6 +1245,111 @@ WHERE user.`id` = orders.`user_id`
         - 将关联查询信息映射到一个list集合中。
     - 场合:
         - 为了**方便获取关联信息**可以使用collection将关联信息映射到list集合中，比如，可使用collection将模块和功能列表映射到list中。
+## 查询缓存
+### 缓存的意义
+将用户经常查询的数据放在缓存(内存)中，用户去查询数据就不用从磁盘上(关系型数据库数据文件)查询，从缓存中查询，从而提高查询效率，解决了高并发系统的性能问题。  
 
+![](./_image/2018-05-12-20-38-13.jpg)
+### mybatis持久层缓存
+- mybatis提供一级缓存和二级缓存。
 
+![](./_image/2018-05-12-20-38-56.jpg)
+- mybatis一级缓存是一个SqlSession级别，SqlSession只能访问自己的一级缓存的数据，二级缓存是跨SqlSession，是mapper级别的缓存，对于mapper级别的缓存不同的SqlSession是可以共享的。
+### 一级缓存
+#### 原理
 
+![](./_image/2018-05-12-20-41-53.jpg)
+- 第一次发出一个查询sql，sql查询结果写入sqlSession的一级缓存中，缓存使用的数据结构是一个map<key,value>
+    - key:hashcode+sql+sql输入参数+输出参数
+    - value:用户信息
+- **同一个sqlSession**再次发出**相同的sql**，就从缓存中取数据，不从数据库中取数据。如果两次中间出现**commit操作**(修改、添加、删除)，本sqlSession中的**一级缓存区域全部清空**(目的是为了防止查出脏数据)，下次再去缓存中查询，查询不到数据，所以要从数据库查询，从数据库查询到数据再写入缓存。
+
+![](./_image/2018-05-12-20-47-30.png)
+1. 如果缓存中查询到则将缓存数据直接返回。
+2. 如果缓存中查询不到就从数据库查询。
+
+![](./_image/2018-05-12-20-48-21.png)
+#### 一级缓存配置
+- mybatis默认支持一级缓存不需要配置。
+- **注意:mybatis和spring整合后进行mapper代理开发，不支持一级缓存，mybatis和spring整合，spring按照mapper模板去生成mapper代理对象，模板中在最后统一关闭SqlSession。**(sqlSession关闭后，一级缓存也就清空了)
+### 二级缓存
+- 二级缓存的范围是mapper级别(mapper同一个命名空间，**mapper的命名空间是可以相同的**)，mapper以命名空间为单位创建缓存数据结构，结构是map <key,value>。
+
+![](./_image/2018-05-12-21-13-01.jpg)
+- 每次查询先看是否开启二级缓存，如果开启就从二级缓存的数据结构中取缓存数据，如果从二级缓存没有取到，再从一级缓存中找，如果一级缓存也没有，就从数据库查询。
+
+![](./_image/2018-05-12-21-21-11.png)
+#### mybatis二级缓存配置
+在核心配置文件SqlMapConfig.xml中加入
+```xml
+<setting name="cacheEnabled" value="true"/>
+```
+
+|设置项|描述|允许值|默认值|
+|-----------|-----------|-----------|-----------|
+|cacheEnabled|对在此配置文件下的所有cache 进行全局性开/关设置。|true、false|true|
+
+- 要在你的Mapper映射文件中**添加一行：  <cache /> ，表示此mapper开启二级缓存**。
+#### 查询结果映射的pojo序列化
+- mybatis二级缓存需要将查询结果**映射的pojo实现java.io.serializable接口**，如果不实现则抛出异常:org.apache.ibatis.cache.CacheException: Error serializing object.  Cause: java.io.NotSerializableException: cn.itcast.mybatis.po.User
+- 二级缓存可以将内存的数据写到磁盘，存在对象的**序列化和反序列化**，所以要实现java.io.serializable接口。
+```java
+public class User implements Serializable {
+
+	private int id;
+	private String username;// 用户名
+	private String sex;// 性别
+	private Date birthday;// 出生
+	private String address;// 地址
+	
+	//多个订单
+	private List<Orders> orderList;
+	//getter and setter
+```
+#### 二级缓存禁用
+- 对于变化频率较高的sql，需要禁用二级缓存:
+    - 在statement中设置useCache=false可以禁用当前select语句的二级缓存， 即每次查询都会发出sql去查询，默认情况是true，即该sql使用二级缓存。
+```xml
+<select id="findOrderListResultMap" resultMap="ordersUserMap" useCache="false">
+```
+#### 刷新缓存
+- 如果sqlSession操作commit操作，对二级缓存进行刷新(全局清空)。
+- 设置statement的flushCache是否刷新缓存，默认值是true。(一般该属性设置在insert、update、delete标签上)
+#### 测试代码
+```java
+/**
+	 * 通过ID查询指定用户
+	 * @throws Exception 
+	 */
+	@Test
+	public void cacheTest() throws Exception {
+		
+		SqlSession sqlSession1 = sqlSessionFactory.openSession();
+		SqlSession sqlSession2 = sqlSessionFactory.openSession();
+		SqlSession sqlSession3 = sqlSessionFactory.openSession();
+		
+		UserMapper userMapper1 = sqlSession1.getMapper(UserMapper.class);
+		UserMapper userMapper2 = sqlSession2.getMapper(UserMapper.class);
+		UserMapper userMapper3 = sqlSession3.getMapper(UserMapper.class);
+		
+		//记得关sqlSession，否则不是从二级缓存中查
+		
+		//第一次查询id为1的用户
+		User user1 = userMapper1.findById(1);
+		System.out.println(user1);
+		sqlSession1.close();
+		
+		//中间修改用户，要清空二级缓存，为了防止出现脏数据
+		user1.setUsername("王六");
+		userMapper3.updateUser(user1);
+		sqlSession3.commit();
+		sqlSession3.close();
+		
+		
+		
+		//第二次查询id为1的用户，在没有执行增加、删除、修改操作前，通过二级缓存查
+		User user2 = userMapper2.findById(1);
+		System.out.println(user2);
+		sqlSession2.close();
+	}
+```
