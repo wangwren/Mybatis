@@ -9,6 +9,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  -->
 <mapper namespace="vvr.mybatis.mapper.UserMapper">
 
+	<!-- 表示此mapper开启二级缓存 -->
+	<cache/>
+
 <!-- 在mapper.xml文件中配置很多的sql语句，执行每个sql语句时，封装为MappedStatement对象
 mapper.xml以statement为单位管理sql语句
  -->
@@ -78,8 +81,10 @@ mapper.xml以statement为单位管理sql语句
 		parameterType：输入 参数的类型，通过#{}接收parameterType输入 的参数
 		resultType：输出结果 类型，不管返回是多条还是单条，指定单条记录映射的pojo类型
 		这里的resultType类型在SqlMapConfig.xml中指定了别名
+		
+		useCache=false:可以禁用当前select语句的二级缓存，即每次查询都会发出sql去查询，默认情况是true，即该sql使用二级缓存。
 	 -->
-	<select id="findById" parameterType="int" resultType="user">
+	<select id="findById" parameterType="int" resultType="user" useCache="true">
 		select * from user where id = #{id}
 	</select>
 	
@@ -183,8 +188,10 @@ mapper.xml以statement为单位管理sql语句
 		delete from user where id = #{id}
 	</delete>
 	
-	<!-- 用户更新 -->
-	<update id="updateUser" parameterType="vvr.mybatis.pojo.User">
+	<!-- 用户更新 
+		flushCache是否刷新缓存，默认值是true。一般都是选择true，为了不获得到脏数据
+	-->
+	<update id="updateUser" parameterType="vvr.mybatis.pojo.User" flushCache="true">
 		update user set username = #{username},birthday = #{birthday},sex = #{sex},address = #{address} where id = #{id}
 	</update>
 </mapper>

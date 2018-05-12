@@ -106,9 +106,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		 -->
 		<collection property="orderdetails" select="findOrderdetailByOrdersId" column="id">
 			<!-- 在这配关系没用 -->
-			<!-- <id column="id" property="id"/>
-			<result column="items_num" property="itemsNum"/>
-			<result column="items_id" property="itemsId"/> -->
+			
 		</collection>
 	</resultMap>
 	

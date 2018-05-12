@@ -1,8 +1,9 @@
 package vvr.mybatis.pojo;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class Items {
+public class Items implements Serializable{
     private Integer id;
 
     private String name;

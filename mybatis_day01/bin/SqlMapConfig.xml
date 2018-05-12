@@ -11,8 +11,10 @@ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
 	<settings>
 		<!-- 延迟加载总开关 -->
 		<setting name="lazyLoadingEnabled" value="true" />	
-		<!-- 设置按需加载 -->
+		<!-- 设置按需加载 ，设置成false才会按需加载-->
 		<setting name="aggressiveLazyLoading" value="false" />
+		<!-- 全局性二级缓存的开关设置 -->
+		<setting name="cacheEnabled" value="true"/>
 	</settings>
 
 	

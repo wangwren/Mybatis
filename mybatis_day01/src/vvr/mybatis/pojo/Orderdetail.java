@@ -1,6 +1,8 @@
 package vvr.mybatis.pojo;
 
-public class Orderdetail {
+import java.io.Serializable;
+
+public class Orderdetail implements Serializable{
     private Integer id;
 
     private Integer ordersId;
