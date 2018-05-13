@@ -1405,3 +1405,117 @@ mybatis二级缓存通过ehcache维护缓存数据。
 ### mybatis局限性
 mybatis二级缓存对**细粒度的数据**级别的缓存实现不好，比如如下需求：对商品信息进行缓存，由于商品信息查询访问量大，但是要求用户每次都能查询最新的商品信息，此时如果使用mybatis的二级缓存就无法实现当一个商品变化时只刷新该商品的缓存信息而不刷新其它商品的信息，因为mybaits的二级缓存区域以mapper为单位划分，当一个商品信息变化会将所有商品信息的缓存数据全部清空。解决此类问题需要在业务层根据需求对数据有针对性缓存。  
 ## mybatis和spring框架整合
+### 整合思路
+- 让Spring管理SqlSessionFactory
+- 让Spring管理mapper对象和dao
+    - 使用Spring和mybatis整合开发mapper代理及原始dao接口
+    - 自动开启事务，自动关闭sqlSession
+- 让Spring管理数据源(数据库连接池)
+### 加入jar包
+- mybatis3.2.7本身的jar包
+- 数据库驱动包
+- spring3.2.0
+- spring和mybatis整合包
+    - 从mybatis的官方下载spring和mybatis整合包
+### log4j.properties
+### SqlMapConfig.xml
+mybatis配置文件:别名、settings，数据源不在这配置了。  
+### applicationContext.xml
+- 数据源(dbcp连接池)
+- SqlSessionFactory
+- mapper或dao
+#### 配置SqlSessionFactory
+- 在applicationContext.xml配置SqlSessionFactory
+```xml
+<!-- SqlSessionFactory
+		SqlSessionFactoryBean：是spring与mybatis整合包中的类
+	 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 数据源 -->
+		<property name="dataSource" ref="dataSource"/>
+		<!-- mybatis配置文件
+			configLocation：SqlSessionFactoryBean中的一个属性，需要指定mybatis的配置文件，这是一个字符串变量
+		 -->
+		<property name="configLocation" value="classpath:mybatis/SqlMapConfig.xml"/>
+	</bean>
+```
+#### 开发Dao
+```java
+/**
+ * 
+ * @author wwr
+ *SqlSessionDaoSupport与hibernate的hibernateDaoSupport一样
+ */
+public class UserDaoImpl extends SqlSessionDaoSupport implements UserDao {
+
+	@Override
+	public User findUserById(int id) throws Exception {
+
+		SqlSession sqlSession = this.getSqlSession();
+		
+		//selectOne("test.findById",id)，第二个参数代表想要查询的用户id，必须写，否则查不到数据
+		User user = sqlSession.selectOne("test.findById",id);
+		return user;
+	}
+}
+```
+#### 配置Dao
+```xml
+<bean id="userDao" class="vvr.mybatis.dao.UserDaoImpl">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"/>
+	</bean>
+```
+#### 测试Dao接口
+```java
+@Test
+	public void findUserById() throws Exception {
+		
+		UserDao userDao = (UserDao) applicationContext.getBean("userDao");
+		User user = userDao.findUserById(1);
+		System.out.println(user);
+	}
+```
+### 整合开发mapper代理的方式
+#### 开发mapper.xml和mapper.java
+
+![](./_image/2018-05-13-15-38-26.jpg)
+
+#### 使用MapperFactoryBean
+```xml
+<!-- 使用mapper代理的开发方式 
+		MapperFactoryBean：用于生成mapper代理，这个方法需要对每一个mapper都要指定
+	-->
+	<bean id="userMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<!--指定对应的接口-->
+		<property name="mapperInterface" value="vvr.mybatis.mapper.UserMapper"/>
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"/>
+	</bean>
+```
+使用此方法对于每个mapper都需要配置，比较繁琐。  
+#### 使用MapperScannerConfigurer(扫描mapper)
+```xml
+<!-- 使用mapper代理，扫描的方式
+    MapperScannerConfigurer：mapper的扫描器，将包下的mapper接口自动创建代理对象，
+	自动创建到spring容器中，bean的id是mapper的类名（首字母小写）
+  -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 指定要扫描的包，如果要扫描多个包，使用半角逗号隔开 -->
+		<property name="basePackage" value="vvr.mybatis.mapper"/>
+		
+		<!-- 注意，使用扫描的方式，这里的属性指定的是sqlSessionFactoryBeanName，
+		而不是sqlSessionFactory，使用sqlSessionFactory会与加载配置文件冲突，
+		所以选择sqlSessionFactoryBeanName，它是一个字符串变量。
+		这里的property，都是指定class中的属性，我们通过spring注入 -->
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+	</bean>
+```
+#### 测试mapper接口
+```java
+@Test
+	public void findUserById() throws Exception {
+		
+		UserMapper userMapper = (UserMapper) applicationContext.getBean("userMapper");
+		User user = userMapper.findById(10);
+		System.out.println(user);
+	}
+```
