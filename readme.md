@@ -1292,7 +1292,7 @@ WHERE user.`id` = orders.`user_id`
 - 要在你的Mapper映射文件中**添加一行：  <cache /> ，表示此mapper开启二级缓存**。
 #### 查询结果映射的pojo序列化
 - mybatis二级缓存需要将查询结果**映射的pojo实现java.io.serializable接口**，如果不实现则抛出异常:org.apache.ibatis.cache.CacheException: Error serializing object.  Cause: java.io.NotSerializableException: cn.itcast.mybatis.po.User
-- 二级缓存可以将内存的数据写到磁盘，存在对象的**序列化和反序列化**，所以要实现java.io.serializable接口。
+- 二级缓存可以将内存的数据写到磁盘，存在对象的**序列化和反序列化**，所以要对pojo类实现java.io.serializable接口。
 ```java
 public class User implements Serializable {
 
@@ -1353,3 +1353,55 @@ public class User implements Serializable {
 		sqlSession2.close();
 	}
 ```
+### mybatis的cache参数(了解)
+- mybatis的cache参数只适用于mybatis维护缓存。
+- flushInterval(刷新间隔)可以被设置为任意的正整数，而且它们代表一个合理的**毫秒形式**的时间段。默认情况是不设置，也就是没有刷新间隔，缓存仅仅调用语句刷新。
+- size(引用数目)可以被设置为任意正整数，要记住你缓存的对象数目和你运行环境的可用内存资源数目。默认值是1024。
+- readOnly(只读)属性可以被设置为true或false。只读的缓存会给所有调用者返回缓存对象的相同实例。因此这些对象不能被修改。这提供了很重要的性能优势。可读写的缓存会返回缓存对象的拷贝(通过序列化)。这会慢一些，但是安全，因此默认是false。
+- 如下例子:
+```xml
+<cache  eviction="FIFO"  flushInterval="60000"  size="512"  readOnly="true"/>
+```
+- 这个更高级的配置创建了一个 FIFO 缓存,并每隔 60 秒刷新,存数结果对象或列表的 512 个引用,而且返回的对象被认为是只读的,因此在不同线程中的调用者之间修改它们会导致冲突。可用的收回策略有, 默认的是 LRU:
+    - LRU – 最近最少使用的:移除最长时间不被使用的对象。
+    - FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+    - SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+    - WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+## mybatis和ehcache缓存框架整合
+mybatis二级缓存通过ehcache维护缓存数据。
+### 分布缓存
+将缓存数据进行分布管理。  
+ 
+![](./_image/2018-05-13-13-00-09.jpg)
+### mybatis和ehcache整合思路
+- 通过mybatis和ehcache框架进行整合，就可以把缓存数据的管理托管给ehcache。
+- 在mybatis中提供一个cache接口，只要**实现cache接口**就可以把缓存数据灵活的管理起来。
+
+![](./_image/2018-05-13-13-02-18.jpg)
+- cache接口在mybatis中的默认实现:
+
+![](./_image/2018-05-13-13-02-49.jpg)
+### 下载和ehcache整合的jar包
+
+![](./_image/2018-05-13-13-03-10.jpg)
+- ehcache对cache接口的实现类
+
+![](./_image/2018-05-13-13-03-36.jpg)
+- 该类是ehcache中实现mybatis的Cache接口，进而才实现缓存数据托管给ehcache。
+### 配置ehcache.xml
+
+![](./_image/2018-05-13-13-05-05.jpg)
+### 整合测试
+- 在mapper.xml添加ehcache配置:
+
+![](./_image/2018-05-13-13-05-39.jpg)
+- 该配置是在mapper.xml中的cache标签中配置
+    - type:指定的是ehcache中实现mybatis的cache接口的类
+    - 标签内的配置，是对单个mapper.xml进行的单独个性化配置。在ehcache.xml进行的配置是全局配置。
+### 二级缓存的应用场景
+- 对查询频率高，变化频率低的数据建议使用二级缓存。
+- 对于访问多的查询请求且用户对查询结果实时性要求不高，此时可采用mybatis二级缓存技术降低数据库访问量，提高访问速度，业务场景比如：耗时较高的统计分析sql、电话账单查询sql等。
+- 实现方法如下：通过设置刷新间隔时间，由mybatis每隔一段时间自动清空缓存，根据数据变化频率设置缓存刷新间隔flushInterval，比如设置为30分钟、60分钟、24小时等，根据需求而定。
+### mybatis局限性
+mybatis二级缓存对**细粒度的数据**级别的缓存实现不好，比如如下需求：对商品信息进行缓存，由于商品信息查询访问量大，但是要求用户每次都能查询最新的商品信息，此时如果使用mybatis的二级缓存就无法实现当一个商品变化时只刷新该商品的缓存信息而不刷新其它商品的信息，因为mybaits的二级缓存区域以mapper为单位划分，当一个商品信息变化会将所有商品信息的缓存数据全部清空。解决此类问题需要在业务层根据需求对数据有针对性缓存。  
+## mybatis和spring框架整合
