@@ -1,9 +1,8 @@
 package vvr.mybatis.pojo;
 
-import java.io.Serializable;
 import java.util.Date;
 
-public class Items implements Serializable{
+public class Items {
     private Integer id;
 
     private String name;
@@ -15,7 +14,6 @@ public class Items implements Serializable{
     private Date createtime;
 
     private String detail;
-    
 
     public Integer getId() {
         return id;
@@ -64,12 +62,4 @@ public class Items implements Serializable{
     public void setDetail(String detail) {
         this.detail = detail == null ? null : detail.trim();
     }
-
-	@Override
-	public String toString() {
-		return "Items [id=" + id + ", name=" + name + ", price=" + price
-				+ ", pic=" + pic + ", createtime=" + createtime + ", detail="
-				+ detail + "]";
-	}
-    
 }

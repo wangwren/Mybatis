@@ -1,44 +1,19 @@
 package vvr.mybatis.pojo;
 
-import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
-public class Orders implements Serializable{
+public class Orders {
     private Integer id;
 
-    private Integer user_Id;
+    private Integer userId;
 
     private String number;
 
     private Date createtime;
 
     private String note;
-    
-    //使用resultMap完成一对一映射，需要在类中定义变量,关联用户信息
-    private User user;
-    
-    //使用resultMap完成一对多的映射，关联订单明细
-    private List<Orderdetail> orderdetails;
-    
 
-    public List<Orderdetail> getOrderdetails() {
-		return orderdetails;
-	}
-
-	public void setOrderdetails(List<Orderdetail> orderdetails) {
-		this.orderdetails = orderdetails;
-	}
-
-	public User getUser() {
-		return user;
-	}
-
-	public void setUser(User user) {
-		this.user = user;
-	}
-
-	public Integer getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -46,15 +21,15 @@ public class Orders implements Serializable{
         this.id = id;
     }
 
-    public Integer getUser_Id() {
-		return user_Id;
-	}
+    public Integer getUserId() {
+        return userId;
+    }
 
-	public void setUser_Id(Integer user_Id) {
-		this.user_Id = user_Id;
-	}
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
 
-	public String getNumber() {
+    public String getNumber() {
         return number;
     }
 
@@ -77,5 +52,4 @@ public class Orders implements Serializable{
     public void setNote(String note) {
         this.note = note == null ? null : note.trim();
     }
-    
 }

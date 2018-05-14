@@ -28,11 +28,15 @@
 		<property name="maxIdle" value="5" />
 	</bean>
 	
-	<!-- SqlSessionFactory -->
+	<!-- SqlSessionFactory
+		SqlSessionFactoryBean：是spring与mybatis整合包中的类
+	 -->
 	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
 		<!-- 数据源 -->
 		<property name="dataSource" ref="dataSource"/>
-		<!-- mybatis配置文件 -->
+		<!-- mybatis配置文件
+			configLocation：SqlSessionFactoryBean中的一个属性，需要指定mybatis的配置文件
+		 -->
 		<property name="configLocation" value="classpath:mybatis/SqlMapConfig.xml"/>
 	</bean>
 	
@@ -51,7 +55,10 @@
 		<property name="sqlSessionFactory" ref="sqlSessionFactory"/>
 	</bean> -->
 	
-	<!-- 使用mapper代理，扫描的方式 -->
+	<!-- 使用mapper代理，扫描的方式
+		MapperScannerConfigurer：mapper的扫描器，将包下的mapper接口自动创建代理对象，
+		自动创建到spring容器中，bean的id是mapper的类名（首字母小写）
+	 -->
 	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
 		<!-- 指定要扫描的包，如果要扫描多个包，使用半角逗号隔开 -->
 		<property name="basePackage" value="vvr.mybatis.mapper"/>

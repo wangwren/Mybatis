@@ -1,8 +1,6 @@
 package vvr.mybatis.pojo;
 
-import java.io.Serializable;
-
-public class Orderdetail implements Serializable{
+public class Orderdetail {
     private Integer id;
 
     private Integer ordersId;
@@ -10,20 +8,8 @@ public class Orderdetail implements Serializable{
     private Integer itemsId;
 
     private Integer itemsNum;
-    
-    //商品信息
-    private Items items;
-    
 
-    public Items getItems() {
-		return items;
-	}
-
-	public void setItems(Items items) {
-		this.items = items;
-	}
-
-	public Integer getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -39,23 +25,19 @@ public class Orderdetail implements Serializable{
         this.ordersId = ordersId;
     }
 
-    
+    public Integer getItemsId() {
+        return itemsId;
+    }
 
-	public Integer getItemsId() {
-		return itemsId;
-	}
+    public void setItemsId(Integer itemsId) {
+        this.itemsId = itemsId;
+    }
 
-	public void setItemsId(Integer itemsId) {
-		this.itemsId = itemsId;
-	}
-
-	public Integer getItemsNum() {
+    public Integer getItemsNum() {
         return itemsNum;
     }
 
     public void setItemsNum(Integer itemsNum) {
         this.itemsNum = itemsNum;
     }
-
-    
 }
