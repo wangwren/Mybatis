@@ -1607,7 +1607,7 @@ public void generator() throws Exception{
 	}
 ```
 ### 使用逆向工程生成的代码
-[具体工程]()
+[具体工程](https://github.com/wangwren/Mybatis/tree/master/generatorSqlmapCustom)
 - 配置generatorConfig.xml
     - 参考
 
@@ -1620,4 +1620,4 @@ public void generator() throws Exception{
 
 ![](./_image/2018-05-15-20-37-55.jpg)
 - 测试生成的代码
-[参考]()
+[参考](https://github.com/wangwren/Mybatis/blob/master/springmybatis/test/vvr/mybatis/test/ItemsMapperTest.java)
