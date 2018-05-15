@@ -1519,3 +1519,105 @@ public class UserDaoImpl extends SqlSessionDaoSupport implements UserDao {
 		System.out.println(user);
 	}
 ```
+## mybatis逆向工程(Mybatis Generator)
+### 什么是mybatis的逆向工程
+mybatis官方为了提高开发效率，提供自动对单表生成sql，包括:mapper.xml,mapper.java,表名.java(pojo类)  
+所需要的jar包:  
+
+![](./_image/2018-05-15-20-22-47.png)
+在开发中通常是在设计阶段对表进行设计、创建。  
+在开发阶段根据表结构创建对应的pojo类。(只是对应单表，外键什么的不会创建对应的对象)  
+mybatis逆向工程的方向:由数据库表-->>Java代码。  
+### 逆向工程使用配置
+- 运行逆向工程方法:
+
+![](./_image/2018-05-15-20-26-06.jpg)
+- 本教程使用通过java程序运行逆向工程
+- 逆向工程运行所需要的jar包:
+
+![](./_image/2018-05-15-20-26-55.jpg)
+- 加上数据库驱动
+#### xml配置
+需要使用配置的地方:  
+1. 连接数据库的地址和驱动
+```xml
+<!--数据库连接的信息：驱动类、连接地址、用户名、密码 -->
+		<jdbcConnection driverClass="com.mysql.jdbc.Driver"
+			connectionURL="jdbc:mysql://localhost:3306/mybatis" userId="root"
+			password="root">
+		</jdbcConnection>
+```
+2. 需要配置pojo类的包路径
+```xml
+<!-- targetProject:生成PO类的位置 -->
+		<javaModelGenerator targetPackage="vvr.mybatis.pojo"
+			targetProject=".\src">
+			<!-- enableSubPackages:是否让schema作为包的后缀 -->
+			<property name="enableSubPackages" value="false" />
+			<!-- 从数据库返回的值被清理前后的空格 -->
+			<property name="trimStrings" value="true" />
+		</javaModelGenerator>
+```
+3. 需要配置mapper包的路径
+```java
+<!-- targetProject:mapper映射文件生成的位置 -->
+		<sqlMapGenerator targetPackage="vvr.mybatis.mapper" 
+			targetProject=".\src">
+			<!-- enableSubPackages:是否让schema作为包的后缀 -->
+			<property name="enableSubPackages" value="false" />
+		</sqlMapGenerator>
+		<!-- targetPackage：mapper接口生成的位置 -->
+		<javaClientGenerator type="XMLMAPPER"
+			targetPackage="vvr.mybatis.mapper" 
+			targetProject=".\src">
+			<!-- enableSubPackages:是否让schema作为包的后缀 -->
+			<property name="enableSubPackages" value="false" />
+		</javaClientGenerator>
+```
+4. 指定数据库表
+```xml
+<!-- 指定数据库表 -->
+		<table tableName="items"></table>
+		<table tableName="orders"></table>
+		<table tableName="orderdetail"></table>
+```
+#### java程序
+- 通过java程序生成mapper类、pojo类
+```java
+public void generator() throws Exception{
+
+		List<String> warnings = new ArrayList<String>();
+		boolean overwrite = true;
+		//指定 逆向工程配置文件
+		File configFile = new File("generatorConfig.xml"); 
+		ConfigurationParser cp = new ConfigurationParser(warnings);
+		Configuration config = cp.parseConfiguration(configFile);
+		DefaultShellCallback callback = new DefaultShellCallback(overwrite);
+		MyBatisGenerator myBatisGenerator = new MyBatisGenerator(config,
+				callback, warnings);
+		myBatisGenerator.generate(null);
+	} 
+	public static void main(String[] args) throws Exception {
+		try {
+			GeneratorSqlmap generatorSqlmap = new GeneratorSqlmap();
+			generatorSqlmap.generator();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+```
+### 使用逆向工程生成的代码
+[具体工程]()
+- 配置generatorConfig.xml
+    - 参考
+
+![](./_image/2018-05-15-20-34-37.jpg)
+- 配置执行java程序
+    - 执行Java程序后，所生成的代码已经生成到![](./_image/2018-05-15-20-35-35.jpg)工程中。  
+
+![](./_image/2018-05-15-20-36-56.jpg)
+- 将代码拷贝到需要的工程中
+
+![](./_image/2018-05-15-20-37-55.jpg)
+- 测试生成的代码
+[参考]()
